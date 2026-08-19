@@ -102,27 +102,23 @@ export default function Home() {
       } catch (e) { console.error("데이터 읽기 실패", e); }
     }
 
-    // 🌟 1. 중복 제거를 위한 Map 생성 (이름 기준으로 최신 폼 응답만 남기기)
     const latestResponsesMap = new Map();
     rawResponses.forEach((row) => {
       const rowEvent = row['참석 행사'] || '';
       if (rowEvent === adminSelectedEvent) {
         const nameKey = Object.keys(row).find(key => key.includes('이름')) || '';
         const name = row[nameKey] || '이름없음';
-        latestResponsesMap.set(name, row); // 동일한 이름이 또 제출하면 덮어씌워짐 (최신화)
+        latestResponsesMap.set(name, row); 
       }
     });
 
     const dynamicDrivers: Person[] = [];
     const dynamicRiders: Person[] = [];
-
-    // 🌟 2. 최신 응답들만 배열로 만들어서 처리
     const latestResponses = Array.from(latestResponsesMap.values());
 
     latestResponses.forEach((row, idx) => {
       const isAttending = String(row['참석 여부 (Attendance or not)'] || row['참석 여부'] || '').includes('참석하겠습니다');
       
-      // 🌟 취소 처리: 만약 최신 응답이 '불참'이라면 배열에 넣지 않고 무시합니다! (자동 취소 완료)
       if (isAttending) {
         const nameKey = Object.keys(row).find(key => key.includes('이름')) || '';
         const name = row[nameKey] || '이름없음';
@@ -264,9 +260,13 @@ export default function Home() {
   const uniqueEvents = Array.from(new Set(events.map(e => e.fullName)));
 
   return (
-    <div style={{ maxWidth: '480px', margin: '0 auto', background: '#f4f4f5', minHeight: '100vh', position: 'relative', paddingBottom: '80px', fontFamily: 'sans-serif', boxShadow: '0 0 20px rgba(0,0,0,0.05)' }}>
+    // 🌟 바로 이 줄에 width: '100%'가 추가되어 화면 크기가 일정하게 고정됩니다!
+    <div style={{ width: '100%', maxWidth: '480px', margin: '0 auto', background: '#f4f4f5', minHeight: '100vh', position: 'relative', paddingBottom: '80px', fontFamily: 'sans-serif', boxShadow: '0 0 20px rgba(0,0,0,0.05)' }}>
       
+      {/* 🌟 여백 찌그러짐을 방지하는 box-sizing: border-box 와 기본 margin 제거 코드 추가 */}
       <style>{`
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 0; background-color: #f4f4f5; }
         .hover-btn { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
         .hover-btn:hover { transform: translateY(-2px); filter: brightness(1.05); box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
         .hover-btn:active { transform: translateY(0); }
@@ -345,7 +345,7 @@ export default function Home() {
         {currentTab === 'admin' && (
           <div>
             <div style={{ background: '#fef2f2', color: '#ef4444', padding: '14px 20px', borderRadius: '12px', fontSize: '13px', marginBottom: '20px', border: '1px solid #fecaca', textAlign: 'center', lineHeight: '1.5' }}>
-              [안내] 이곳은 <b>목사님</b>과 <b>차량 운전자</b>분들이 조율하는 관리 공간입니다. 일반 교인분들은 눈으로만 이용해 주세요.
+              [안내] 이곳은 목사님과 <b>차량 운전자</b>분들만 이용하는 관리 공간입니다. 일반 교인분들은 <b>일정 달력</b> 탭을 이용해 주세요.
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
@@ -374,7 +374,7 @@ export default function Home() {
 
             {adminSelectedEvent ? (
               <>
-                <div style={{ background: '#eff6ff', color: '#1d4ed8', padding: '12px 15px', borderRadius: '10px', fontSize: '13px', marginBottom: '20px', border: '1px solid #bfdbfe' }}>안내: 화면에서 드래그 혹은 클릭하여 배정한 후 우측 상단의 <b>[결과 저장]</b> 버튼을 꼭 눌러주세요.</div>
+                <div style={{ background: '#eff6ff', color: '#1d4ed8', padding: '12px 15px', borderRadius: '10px', fontSize: '13px', marginBottom: '20px', border: '1px solid #bfdbfe' }}>안내: 화면에서 드래그하여 배정한 후 우측 상단의 <b>[결과 저장]</b> 버튼을 꼭 눌러주세요.</div>
 
                 <div 
                   className={`drop-zone ${dragOverCarId === 'waitlist' ? 'drop-zone-active' : ''}`}
