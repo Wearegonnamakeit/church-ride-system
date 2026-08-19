@@ -314,7 +314,7 @@ export default function Home() {
       )}
 
       <header style={{ background: '#ffffff', padding: '20px', textAlign: 'center', position: 'sticky', top: 0, zIndex: 10, borderBottom: '1px solid #e4e4e7' }}>
-        <h1 style={{ margin: 0, fontSize: '20px', color: '#18181b', fontWeight: '800' }}>우리교회 라이드</h1>
+        <h1 style={{ margin: 0, fontSize: '20px', color: '#18181b', fontWeight: '800' }}>리빙스톤 교회 라이드</h1>
       </header>
 
       <main style={{ padding: '20px' }}>
