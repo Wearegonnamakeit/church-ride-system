@@ -402,7 +402,7 @@ export default function Home() {
 
             <div style={{ marginBottom: '15px' }}>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#3f3f46', marginBottom: '6px' }}>전화번호 *</label>
-              <input type="tel" value={profile.phone} onChange={(e) => setProfile({...profile, phone: e.target.value})} placeholder="010-1234-5678" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #d4d4d8', fontSize: '15px' }} />
+              <input type="tel" value={profile.phone} onChange={(e) => setProfile({...profile, phone: e.target.value})} placeholder="608-123-4567" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #d4d4d8', fontSize: '15px' }} />
             </div>
 
             <div style={{ marginBottom: '15px' }}>
@@ -417,7 +417,7 @@ export default function Home() {
 
             <div style={{ marginBottom: '15px' }}>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#3f3f46', marginBottom: '6px' }}>집 주소 또는 픽업 주소</label>
-              <input type="text" value={profile.address} onChange={(e) => setProfile({...profile, address: e.target.value})} placeholder="서울시 강남구 테헤란로 123" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #d4d4d8', fontSize: '15px' }} />
+              <input type="text" value={profile.address} onChange={(e) => setProfile({...profile, address: e.target.value})} placeholder="500 Lincoln Dr, Madison, WI 53706 미국" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #d4d4d8', fontSize: '15px' }} />
             </div>
 
             {profile.rideType.includes('운전 가능') && (
