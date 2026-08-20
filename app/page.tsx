@@ -22,7 +22,6 @@ interface Person {
   address?: string; 
 }
 
-// 🌟 사용자 프로필 저장을 위한 인터페이스 추가
 interface UserProfile {
   name: string;
   phone: string;
@@ -32,9 +31,7 @@ interface UserProfile {
 }
 
 export default function Home() {
-  // 🌟 탭이 3개로 늘어났습니다! (calendar, profile, admin)
   const [currentTab, setCurrentTab] = useState<'calendar' | 'profile' | 'admin'>('calendar');
-  
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' | 'info' } | null>(null);
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
@@ -46,7 +43,7 @@ export default function Home() {
   const RESPONSES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQWYHu8VfgQPB8i5SHh577Ok32tuVLVnReeNZaUf5BJJdl_eO9aatGhl-RacqO_hY6EESrLl7EOzjiS/pub?gid=1712691725&single=true&output=csv';
   
   const ASSIGNMENT_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQWYHu8VfgQPB8i5SHh577Ok32tuVLVnReeNZaUf5BJJdl_eO9aatGhl-RacqO_hY6EESrLl7EOzjiS/pub?gid=294556834&single=true&output=csv'; 
-  const SAVE_API_URL = 'https://script.google.com/macros/s/AKfycbyBJJe0HkVOf2vU32lvGZXuakS5gL0w6cdXWQmiyWVb2WcWNZkW9qEiDEnP2iEcazSx/exec';
+  const SAVE_API_URL = 'https://script.google.com/macros/s/AKfycbyBJJe0HkVOf2vU32lvGZXuakS5gL0w6cdXWQmiyWVb2WcWNZkW9qEiDEnP2iEcazSx/exec';
 
   const [events, setEvents] = useState<ChurchEvent[]>([]);
   const [rawResponses, setRawResponses] = useState<any[]>([]); 
@@ -54,13 +51,9 @@ export default function Home() {
   const [currentDate, setCurrentDate] = useState(new Date()); 
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
-  // 🌟 내 프로필 상태 관리
-  const [profile, setProfile] = useState<UserProfile>({
-    name: '', phone: '', rideType: '', capacity: '', address: ''
-  });
+  const [profile, setProfile] = useState<UserProfile>({ name: '', phone: '', rideType: '', capacity: '', address: '' });
   const [isProfileSaved, setIsProfileSaved] = useState(false);
 
-  // 화면이 켜질 때 스마트폰(브라우저)에 저장된 내 정보가 있는지 확인해서 불러옵니다.
   useEffect(() => {
     const savedProfile = localStorage.getItem('church_ride_profile');
     if (savedProfile) {
@@ -69,37 +62,40 @@ export default function Home() {
     }
   }, []);
 
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/[^\d]/g, ''); // 숫자가 아닌 건 다 없앰
+    let formatted = raw;
+    
+    if (raw.startsWith('01')) { 
+      if (raw.length > 3 && raw.length <= 7) formatted = `${raw.slice(0, 3)}-${raw.slice(3)}`;
+      else if (raw.length > 7) formatted = `${raw.slice(0, 3)}-${raw.slice(3, 7)}-${raw.slice(7, 11)}`;
+    } else { 
+      if (raw.length > 3 && raw.length <= 6) formatted = `${raw.slice(0, 3)}-${raw.slice(3)}`;
+      else if (raw.length > 6) formatted = `${raw.slice(0, 3)}-${raw.slice(3, 6)}-${raw.slice(6, 10)}`;
+    }
+    setProfile({ ...profile, phone: formatted });
+  };
+
   const handleProfileSave = () => {
     if (!profile.name || !profile.phone || !profile.rideType) {
-      showToast('이름, 전화번호, 이동 수단은 필수입니다!', 'error');
-      return;
+      showToast('이름, 전화번호, 이동 수단은 필수입니다!', 'error'); return;
     }
     localStorage.setItem('church_ride_profile', JSON.stringify(profile));
     setIsProfileSaved(true);
     showToast('내 정보가 스마트폰에 안전하게 저장되었습니다!', 'success');
   };
 
-  // 🌟 원클릭 자동 입력 URL 생성 마법사!
   const getPrefilledUrl = (eventName: string, isCancel: boolean = false) => {
     let url = `https://docs.google.com/forms/d/e/1FAIpQLSd_mBaYyyr0G7Qi-VPVqCZBVl1op-MPGJlqB5sT3ANRd_dnvA/viewform?usp=pp_url`;
-    
-    // 행사명 (공통)
     url += `&entry.1913637231=${encodeURIComponent(eventName)}`;
-    
-    // 내 정보가 있으면 폼 주소 뒤에 꼬리표로 다 붙여줍니다.
     if (isProfileSaved) {
       url += `&entry.1705247789=${encodeURIComponent(profile.name)}`;
       url += `&entry.906870747=${encodeURIComponent(profile.phone)}`;
-      
-      // 참석 여부 (신청 vs 취소)
       const attendText = isCancel ? '불참하겠습니다 (absence)' : '참석하겠습니다 (Attend)';
       url += `&entry.1966413337=${encodeURIComponent(attendText)}`;
-      
-      // 취소가 아닐 때만 주소와 이동 수단을 넣습니다.
       if (!isCancel) {
         url += `&entry.141657008=${encodeURIComponent(profile.rideType)}`;
         if (profile.address) url += `&entry.555227514=${encodeURIComponent(profile.address)}`;
-        // (참고: 폼에 정원(Capacity) ID가 추가로 필요하다면 여기에 한 줄 더 추가하시면 됩니다!)
       }
     }
     return url;
@@ -138,6 +134,8 @@ export default function Home() {
   const [adminSelectedEvent, setAdminSelectedEvent] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
   const [people, setPeople] = useState<Person[]>([]);
+  
+  // 🌟 클릭(터치)으로 선택된 사람 저장
   const [selectedRider, setSelectedRider] = useState<string | null>(null);
   const [dragOverCarId, setDragOverCarId] = useState<string | 'waitlist' | null>(null);
 
@@ -174,13 +172,10 @@ export default function Home() {
       if (isAttending) {
         const nameKey = Object.keys(row).find(key => key.includes('이름')) || '';
         const name = row[nameKey] || '이름없음';
-        
         const addressKey = Object.keys(row).find(key => key.includes('주소') || key.includes('Address')) || '';
         const address = addressKey ? row[addressKey] : '';
-
         const rideTypeKey = Object.keys(row).find(key => key.includes('이동 수단') || key.includes('수단') || key.includes('Ride Information')) || '';
         const rideType = rideTypeKey ? String(row[rideTypeKey]) : '';
-
         const capacityKey = Object.keys(row).find(key => key.includes('정원') || key.includes('Capacity')) || '';
         const capacityStr = capacityKey ? String(row[capacityKey]).replace(/[^0-9]/g, '') : '';
         const capacity = capacityStr ? parseInt(capacityStr, 10) : 4;
@@ -301,8 +296,23 @@ export default function Home() {
         .hover-btn { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
         .hover-btn:hover { transform: translateY(-2px); filter: brightness(1.05); box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
         .hover-btn:active { transform: translateY(0); }
+        
         .drop-zone { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .drop-zone-active { transform: scale(1.02); box-shadow: 0 0 20px rgba(59,130,246,0.3); border-color: #3b82f6 !important; background-color: #eff6ff !important; }
+        
+        /* 🌟 터치 모드일 때 꿀렁거리는 애니메이션 */
+        @keyframes pulse-border {
+          0% { border-color: #bfdbfe; background-color: #f8fafc; }
+          50% { border-color: #3b82f6; background-color: #eff6ff; }
+          100% { border-color: #bfdbfe; background-color: #f8fafc; }
+        }
+        .highlight-drop { 
+          animation: pulse-border 1.5s infinite !important; 
+          border-width: 2px !important; 
+          border-style: dashed !important; 
+          cursor: pointer; 
+        }
+
         .toast-enter { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes slideUp { from { transform: translate(-50%, 150%); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
       `}</style>
@@ -314,7 +324,7 @@ export default function Home() {
       )}
 
       <header style={{ background: '#ffffff', padding: '20px', textAlign: 'center', position: 'sticky', top: 0, zIndex: 10, borderBottom: '1px solid #e4e4e7' }}>
-        <h1 style={{ margin: 0, fontSize: '20px', color: '#18181b', fontWeight: '800' }}>리빙스톤 교회 라이드</h1>
+        <h1 style={{ margin: 0, fontSize: '20px', color: '#18181b', fontWeight: '800' }}>우리교회 라이드</h1>
       </header>
 
       <main style={{ padding: '20px' }}>
@@ -368,7 +378,6 @@ export default function Home() {
                       <h4 style={{ margin: '12px 0', fontSize: '18px', color: '#18181b' }}>{event.title}</h4>
                       {event.destination && <div style={{ fontSize: '13px', color: '#71717a', marginBottom: '15px' }}>장소: <span style={{ fontWeight: 'bold', color: '#3f3f46' }}>{event.destination}</span></div>}
                       
-                      {/* 🌟 프로필 유무에 따른 스마트 버튼 렌더링 */}
                       {isProfileSaved ? (
                         <div style={{ display: 'flex', gap: '10px' }}>
                           <button className="hover-btn" onClick={() => window.open(getPrefilledUrl(event.fullName, false), '_blank')} style={{ flex: 1, padding: '12px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer' }}>원클릭 신청</button>
@@ -388,7 +397,7 @@ export default function Home() {
         )}
 
         {/* ======================================================== */}
-        {/* 2. 내 정보 설정 탭 (NEW!) */}
+        {/* 2. 내 정보 설정 탭 */}
         {/* ======================================================== */}
         {currentTab === 'profile' && (
           <div style={{ background: '#fff', padding: '25px', borderRadius: '16px', border: '1px solid #e4e4e7', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
@@ -402,7 +411,16 @@ export default function Home() {
 
             <div style={{ marginBottom: '15px' }}>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#3f3f46', marginBottom: '6px' }}>전화번호 *</label>
-              <input type="tel" value={profile.phone} onChange={(e) => setProfile({...profile, phone: e.target.value})} placeholder="608-123-4567" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #d4d4d8', fontSize: '15px' }} />
+              {/* 🌟 숫자 키패드 호출 및 자동 하이픈 마법 적용 */}
+              <input 
+                type="tel" 
+                inputMode="numeric" 
+                pattern="[0-9]*"
+                value={profile.phone} 
+                onChange={handlePhoneChange} 
+                placeholder="숫자만 입력하세요" 
+                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #d4d4d8', fontSize: '15px' }} 
+              />
             </div>
 
             <div style={{ marginBottom: '15px' }}>
@@ -417,13 +435,13 @@ export default function Home() {
 
             <div style={{ marginBottom: '15px' }}>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#3f3f46', marginBottom: '6px' }}>집 주소 또는 픽업 주소</label>
-              <input type="text" value={profile.address} onChange={(e) => setProfile({...profile, address: e.target.value})} placeholder="500 Lincoln Dr, Madison, WI 53706 미국" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #d4d4d8', fontSize: '15px' }} />
+              <input type="text" value={profile.address} onChange={(e) => setProfile({...profile, address: e.target.value})} placeholder="서울시 강남구 테헤란로 123" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #d4d4d8', fontSize: '15px' }} />
             </div>
 
             {profile.rideType.includes('운전 가능') && (
               <div style={{ marginBottom: '20px' }}>
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#3f3f46', marginBottom: '6px' }}>차량 정원 (본인 제외 남는 좌석)</label>
-                <input type="number" value={profile.capacity} onChange={(e) => setProfile({...profile, capacity: e.target.value})} placeholder="예: 4" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #d4d4d8', fontSize: '15px' }} />
+                <input type="number" inputMode="numeric" pattern="[0-9]*" value={profile.capacity} onChange={(e) => setProfile({...profile, capacity: e.target.value})} placeholder="예: 4" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #d4d4d8', fontSize: '15px' }} />
               </div>
             )}
 
@@ -462,18 +480,21 @@ export default function Home() {
 
             {adminSelectedEvent ? (
               <>
-                <div style={{ background: '#eff6ff', color: '#1d4ed8', padding: '12px 15px', borderRadius: '10px', fontSize: '13px', marginBottom: '20px', border: '1px solid #bfdbfe' }}>안내: 화면에서 드래그하여 배정한 후 우측 상단의 <b>[결과 저장]</b> 버튼을 꼭 눌러주세요.</div>
+                <div style={{ background: '#eff6ff', color: '#1d4ed8', padding: '12px 15px', borderRadius: '10px', fontSize: '13px', marginBottom: '20px', border: '1px solid #bfdbfe' }}>
+                  💡 <b>모바일 꿀팁:</b> 이름을 <b>'한 번 터치'</b>하고, 옮기고 싶은 차량을 <b>'터치'</b>하면 쉽게 쏙 들어갑니다!
+                </div>
 
+                {/* 🌟 꿀렁이는 애니메이션 클래스(highlight-drop) 적용 */}
                 <div 
-                  className={`drop-zone ${dragOverCarId === 'waitlist' ? 'drop-zone-active' : ''}`}
+                  className={`drop-zone ${dragOverCarId === 'waitlist' ? 'drop-zone-active' : ''} ${selectedRider ? 'highlight-drop' : ''}`}
                   onClick={() => assignToCar(null)} onDragOver={(e) => { e.preventDefault(); setDragOverCarId('waitlist'); }} onDragLeave={() => setDragOverCarId(null)} onDrop={(e) => handleDrop(e, null)}
-                  style={{ background: '#ffffff', padding: '20px', borderRadius: '16px', border: dragOverCarId === 'waitlist' ? '2px dashed #3b82f6' : (selectedRider ? '2px dashed #a1a1aa' : '1px solid #e4e4e7'), minHeight: '100px', marginBottom: '25px', cursor: 'pointer' }}
+                  style={{ background: '#ffffff', padding: '20px', borderRadius: '16px', border: dragOverCarId === 'waitlist' ? '2px dashed #3b82f6' : '1px solid #e4e4e7', minHeight: '100px', marginBottom: '25px', cursor: 'pointer' }}
                 >
                   <h3 style={{ margin: '0 0 15px 0', fontSize: '15px', color: '#18181b', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}>대기 인원 <span style={{ background: '#f4f4f5', padding: '2px 8px', borderRadius: '10px', fontSize: '12px', color: '#71717a' }}>{unassignedRiders.length}명</span></h3>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                     {unassignedRiders.map(rider => (
-                      <button className="hover-btn" key={rider.id} draggable onDragStart={(e) => handleDragStart(e, rider.id)} onDragEnd={() => setSelectedRider(null)} onClick={(e) => { e.stopPropagation(); setSelectedRider(selectedRider === rider.id ? null : rider.id); }} style={{ padding: '8px 14px', borderRadius: '20px', border: 'none', fontWeight: 'bold', cursor: 'grab', background: selectedRider === rider.id ? '#3b82f6' : '#f4f4f5', color: selectedRider === rider.id ? '#fff' : '#3f3f46', fontSize: '14px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-                        {rider.name}
+                      <button className="hover-btn" key={rider.id} draggable onDragStart={(e) => handleDragStart(e, rider.id)} onDragEnd={() => setSelectedRider(null)} onClick={(e) => { e.stopPropagation(); setSelectedRider(selectedRider === rider.id ? null : rider.id); }} style={{ padding: '8px 14px', borderRadius: '20px', border: 'none', fontWeight: 'bold', cursor: 'pointer', background: selectedRider === rider.id ? '#3b82f6' : '#f4f4f5', color: selectedRider === rider.id ? '#fff' : '#3f3f46', fontSize: '14px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                        {rider.name} {selectedRider === rider.id && '👆'}
                       </button>
                     ))}
                     {unassignedRiders.length === 0 && <span style={{ fontSize: '13px', color: '#a1a1aa' }}>모두 배정되었습니다.</span>}
@@ -487,7 +508,8 @@ export default function Home() {
                     const isFull = passengers.length >= (driver.capacity || 0);
 
                     return (
-                      <div key={driver.id} className={`drop-zone ${dragOverCarId === driver.id ? 'drop-zone-active' : ''}`} onClick={() => !isFull && assignToCar(driver.id)} onDragOver={(e) => { e.preventDefault(); !isFull && setDragOverCarId(driver.id); }} onDragLeave={() => setDragOverCarId(null)} onDrop={(e) => handleDrop(e, driver.id)} style={{ background: '#ffffff', padding: '20px', borderRadius: '16px', border: isFull ? '2px solid #fecaca' : (dragOverCarId === driver.id ? '2px dashed #3b82f6' : '1px solid #e4e4e7'), position: 'relative', cursor: isFull ? 'not-allowed' : 'pointer', overflow: 'hidden' }}>
+                      // 🌟 꿀렁이는 애니메이션 클래스(highlight-drop) 적용
+                      <div key={driver.id} className={`drop-zone ${dragOverCarId === driver.id ? 'drop-zone-active' : ''} ${selectedRider && !isFull ? 'highlight-drop' : ''}`} onClick={() => !isFull && assignToCar(driver.id)} onDragOver={(e) => { e.preventDefault(); !isFull && setDragOverCarId(driver.id); }} onDragLeave={() => setDragOverCarId(null)} onDrop={(e) => handleDrop(e, driver.id)} style={{ background: '#ffffff', padding: '20px', borderRadius: '16px', border: isFull ? '2px solid #fecaca' : '1px solid #e4e4e7', position: 'relative', cursor: isFull ? 'not-allowed' : 'pointer', overflow: 'hidden' }}>
                         {isFull && <div style={{ position: 'absolute', right: '-25px', top: '15px', background: '#ef4444', color: '#fff', fontSize: '11px', fontWeight: 'bold', padding: '4px 30px', transform: 'rotate(45deg)', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>만차</div>}
                         
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
@@ -502,11 +524,11 @@ export default function Home() {
 
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', minHeight: '45px', background: '#f8fafc', padding: '12px', borderRadius: '10px', border: '1px inset #f1f5f9' }}>
                           {passengers.map(rider => (
-                            <button className="hover-btn" key={rider.id} draggable onDragStart={(e) => handleDragStart(e, rider.id)} onDragEnd={() => setSelectedRider(null)} onClick={(e) => { e.stopPropagation(); setSelectedRider(selectedRider === rider.id ? null : rider.id); }} style={{ padding: '6px 12px', borderRadius: '20px', border: '1px solid #cbd5e1', background: selectedRider === rider.id ? '#3b82f6' : '#ffffff', color: selectedRider === rider.id ? '#fff' : '#334155', fontSize: '13px', fontWeight: 'bold', cursor: 'grab', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              {rider.name} <span style={{ color: selectedRider === rider.id ? '#93c5fd' : '#94a3b8', fontSize: '12px', fontWeight: 'normal' }}>X</span>
+                            <button className="hover-btn" key={rider.id} draggable onDragStart={(e) => handleDragStart(e, rider.id)} onDragEnd={() => setSelectedRider(null)} onClick={(e) => { e.stopPropagation(); setSelectedRider(selectedRider === rider.id ? null : rider.id); }} style={{ padding: '6px 12px', borderRadius: '20px', border: '1px solid #cbd5e1', background: selectedRider === rider.id ? '#3b82f6' : '#ffffff', color: selectedRider === rider.id ? '#fff' : '#334155', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              {rider.name} {selectedRider === rider.id ? '👆' : <span style={{ color: '#94a3b8', fontSize: '12px', fontWeight: 'normal' }}>X</span>}
                             </button>
                           ))}
-                          {passengers.length === 0 && <span style={{ fontSize: '13px', color: '#94a3b8', display: 'flex', alignItems: 'center', height: '100%' }}>이곳으로 이름을 드래그하세요</span>}
+                          {passengers.length === 0 && <span style={{ fontSize: '13px', color: '#94a3b8', display: 'flex', alignItems: 'center', height: '100%' }}>이름을 터치해서 이곳으로 보내세요</span>}
                         </div>
                       </div>
                     );
