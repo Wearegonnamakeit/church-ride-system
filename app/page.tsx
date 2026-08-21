@@ -17,7 +17,6 @@ interface UserProfile {
   name: string; phone: string; rideType: string; capacity: string; address: string;
 }
 
-// 🌟 다국어 번역 사전 (Dictionary)
 const t = {
   loading: { ko: '데이터를 불러오는 중입니다...', en: 'Loading data...' },
   loadFail: { ko: '데이터를 불러오는데 실패했습니다.', en: 'Failed to load data.' },
@@ -84,16 +83,23 @@ const t = {
   
   tab1: { ko: '[ 달력 및 신청 ]', en: '[ Calendar ]' },
   tab2: { ko: '[ 내 정보 설정 ]', en: '[ Profile ]' },
-  tab3: { ko: '[ 배정 관리 ]', en: '[ Admin ]' }
+  tab3: { ko: '[ 배정 관리 ]', en: '[ Admin ]' },
+
+  // 앱 설치 안내 공지사항용 번역 추가
+  guideTitle: { ko: '스마트폰 바탕화면에 앱 설치하기', en: 'Install App on Home Screen' },
+  guideKakao: { ko: '1. 카톡 창 우측 하단(또는 상단) [점 3개] 클릭 -> [다른 브라우저로 열기]', en: '1. Tap [3 dots] in KakaoTalk -> [Open in other browser]' },
+  guideApple: { ko: '2. 아이폰(Safari): 하단 [공유]버튼 -> [홈 화면에 추가]', en: '2. iPhone (Safari): Tap [Share] -> [Add to Home Screen]' },
+  guideGalaxy: { ko: '2. 갤럭시(Chrome): 우측 상단 [점 3개]버튼 -> [홈 화면에 추가]', en: '2. Galaxy (Chrome): Tap [3 dots] -> [Add to Home Screen]' }
 };
 
 export default function Home() {
   const [currentTab, setCurrentTab] = useState<'calendar' | 'profile' | 'admin'>('calendar');
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' | 'info' } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  
-  // 🌟 언어 상태 관리 (기본값 한글)
   const [lang, setLang] = useState<'ko' | 'en'>('ko');
+  
+  // 앱 설치 공지사항 표시 여부 상태
+  const [showInstallGuide, setShowInstallGuide] = useState(false);
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
     setToast({ message, type });
@@ -119,10 +125,20 @@ export default function Home() {
       setProfile(JSON.parse(savedProfile));
       setIsProfileSaved(true);
     }
-    // 🌟 저장된 언어 세팅 불러오기
     const savedLang = localStorage.getItem('church_ride_lang');
     if (savedLang === 'en' || savedLang === 'ko') setLang(savedLang);
+
+    // 공지사항 닫힘 여부 확인
+    const guideDismissed = localStorage.getItem('church_ride_guide_dismissed');
+    if (!guideDismissed) {
+      setShowInstallGuide(true);
+    }
   }, []);
+
+  const dismissInstallGuide = () => {
+    setShowInstallGuide(false);
+    localStorage.setItem('church_ride_guide_dismissed', 'true');
+  };
 
   const toggleLang = () => {
     const nextLang = lang === 'ko' ? 'en' : 'ko';
@@ -367,13 +383,25 @@ export default function Home() {
 
       <header style={{ background: '#ffffff', padding: '18px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'sticky', top: 0, zIndex: 10, borderBottom: '1px solid #e4e4e7' }}>
         <h1 style={{ margin: 0, fontSize: '18px', color: '#18181b', fontWeight: '900' }}>LivingStone Ride</h1>
-        {/* 🌟 마법의 언어 전환 토글 버튼 */}
         <button onClick={toggleLang} style={{ position: 'absolute', right: '20px', background: '#f8fafc', border: '1px solid #cbd5e1', padding: '6px 10px', borderRadius: '16px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', color: '#334155', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
-          {lang === 'ko' ? '🇺🇸 EN' : '🇰🇷 KR'}
+          {lang === 'ko' ? 'EN' : 'KR'}
         </button>
       </header>
 
       <main style={{ padding: '20px' }}>
+        {/* 공지사항 박스 추가 */}
+        {showInstallGuide && (
+          <div style={{ background: '#fef3c7', border: '1px solid #fde68a', padding: '15px', borderRadius: '12px', marginBottom: '20px', position: 'relative' }}>
+            <button onClick={dismissInstallGuide} style={{ position: 'absolute', top: '10px', right: '10px', background: 'transparent', border: 'none', fontSize: '14px', cursor: 'pointer', color: '#92400e', fontWeight: 'bold' }}>X</button>
+            <h3 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#92400e', fontWeight: 'bold' }}>{t.guideTitle[lang]}</h3>
+            <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '13px', color: '#92400e', lineHeight: '1.6' }}>
+              <li>{t.guideKakao[lang]}</li>
+              <li>{t.guideApple[lang]}</li>
+              <li>{t.guideGalaxy[lang]}</li>
+            </ul>
+          </div>
+        )}
+
         {currentTab === 'calendar' && (
           <div>
             {!isProfileSaved && (
@@ -456,7 +484,6 @@ export default function Home() {
             <div style={{ marginBottom: '15px' }}><label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#3f3f46', marginBottom: '6px' }}>{t.name[lang]}</label><input type="text" value={profile.name} onChange={(e) => setProfile({...profile, name: e.target.value})} placeholder="Alex" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #d4d4d8', fontSize: '15px' }} /></div>
             <div style={{ marginBottom: '15px' }}><label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#3f3f46', marginBottom: '6px' }}>{t.phone[lang]}</label><input type="tel" inputMode="numeric" pattern="[0-9]*" value={profile.phone} onChange={handlePhoneChange} placeholder="Only numbers" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #d4d4d8', fontSize: '15px' }} /></div>
             
-            {/* 구글폼 연동을 위해 value값은 원본 텍스트를 반드시 유지하고 화면에 보이는 글자만 번역합니다. */}
             <div style={{ marginBottom: '15px' }}><label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#3f3f46', marginBottom: '6px' }}>{t.ride[lang]}</label>
               <select value={profile.rideType} onChange={(e) => setProfile({...profile, rideType: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #d4d4d8', fontSize: '14px', background: '#fff' }}>
                 <option value="">{t.optSel[lang]}</option>
@@ -502,7 +529,7 @@ export default function Home() {
                   </div>
                   {isShortage ? (
                     <p style={{ margin: '8px 0 0 0', fontSize: '12px', color: '#ef4444', fontWeight: 'bold', textAlign: 'center' }}>
-                      {lang === 'ko' ? `차량 좌석이 ${totalRiders - totalCapacity}자리 부족합니다! 추가 차량이 필요합니다.` : `🚨 Short by ${totalRiders - totalCapacity} seats! Extra cars needed.`}
+                      {lang === 'ko' ? `차량 좌석이 ${totalRiders - totalCapacity}자리 부족합니다! 추가 차량이 필요합니다.` : `Short by ${totalRiders - totalCapacity} seats! Extra cars needed.`}
                     </p>
                   ) : (
                     <p style={{ margin: '8px 0 0 0', fontSize: '12px', color: '#10b981', fontWeight: 'bold', textAlign: 'center' }}>
@@ -515,7 +542,7 @@ export default function Home() {
                   <h3 style={{ margin: '0 0 15px 0', fontSize: '15px', color: '#18181b', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}>{t.waitlist[lang]} <span style={{ background: '#f4f4f5', padding: '2px 8px', borderRadius: '10px', fontSize: '12px', color: '#71717a' }}>{unassignedRiders.length}</span></h3>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                     {unassignedRiders.map(rider => (
-                      <button className="hover-btn" key={rider.id} draggable onDragStart={(e) => handleDragStart(e, rider.id)} onDragEnd={() => setSelectedRider(null)} onClick={(e) => { e.stopPropagation(); setSelectedRider(selectedRider === rider.id ? null : rider.id); }} style={{ padding: '8px 14px', borderRadius: '20px', border: 'none', fontWeight: 'bold', cursor: 'pointer', background: selectedRider === rider.id ? '#3b82f6' : '#f4f4f5', color: selectedRider === rider.id ? '#fff' : '#3f3f46', fontSize: '14px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>{rider.name} {selectedRider === rider.id && '👆'}</button>
+                      <button className="hover-btn" key={rider.id} draggable onDragStart={(e) => handleDragStart(e, rider.id)} onDragEnd={() => setSelectedRider(null)} onClick={(e) => { e.stopPropagation(); setSelectedRider(selectedRider === rider.id ? null : rider.id); }} style={{ padding: '8px 14px', borderRadius: '20px', border: 'none', fontWeight: 'bold', cursor: 'pointer', background: selectedRider === rider.id ? '#3b82f6' : '#f4f4f5', color: selectedRider === rider.id ? '#fff' : '#3f3f46', fontSize: '14px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>{rider.name}</button>
                     ))}
                     {unassignedRiders.length === 0 && <span style={{ fontSize: '13px', color: '#a1a1aa' }}>{t.allAssgn[lang]}</span>}
                   </div>
@@ -539,7 +566,7 @@ export default function Home() {
                         </div>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', minHeight: '45px', background: '#f8fafc', padding: '12px', borderRadius: '10px', border: '1px inset #f1f5f9' }}>
                           {passengers.map(rider => (
-                            <button className="hover-btn" key={rider.id} draggable onDragStart={(e) => handleDragStart(e, rider.id)} onDragEnd={() => setSelectedRider(null)} onClick={(e) => { e.stopPropagation(); setSelectedRider(selectedRider === rider.id ? null : rider.id); }} style={{ padding: '6px 12px', borderRadius: '20px', border: '1px solid #cbd5e1', background: selectedRider === rider.id ? '#3b82f6' : '#ffffff', color: selectedRider === rider.id ? '#fff' : '#334155', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: '6px' }}>{rider.name} {selectedRider === rider.id ? '👆' : <span style={{ color: '#94a3b8', fontSize: '12px', fontWeight: 'normal' }}>X</span>}</button>
+                            <button className="hover-btn" key={rider.id} draggable onDragStart={(e) => handleDragStart(e, rider.id)} onDragEnd={() => setSelectedRider(null)} onClick={(e) => { e.stopPropagation(); setSelectedRider(selectedRider === rider.id ? null : rider.id); }} style={{ padding: '6px 12px', borderRadius: '20px', border: '1px solid #cbd5e1', background: selectedRider === rider.id ? '#3b82f6' : '#ffffff', color: selectedRider === rider.id ? '#fff' : '#334155', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: '6px' }}>{rider.name} {selectedRider !== rider.id && <span style={{ color: '#94a3b8', fontSize: '12px', fontWeight: 'normal' }}>X</span>}</button>
                           ))}
                           {passengers.length === 0 && <span style={{ fontSize: '13px', color: '#94a3b8', display: 'flex', alignItems: 'center', height: '100%' }}>{t.touch[lang]}</span>}
                         </div>
