@@ -1,0 +1,16 @@
+{
+  "name": "리빙스톤 교회 라이드",
+  "short_name": "교회라이드",
+  "description": "리빙스톤 교회 차량 배정 및 신청 시스템",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f4f5",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
