@@ -85,11 +85,13 @@ const t = {
   tab2: { ko: '[ 내 정보 설정 ]', en: '[ Profile ]' },
   tab3: { ko: '[ 배정 관리 ]', en: '[ Admin ]' },
 
-  // 앱 설치 안내 공지사항용 번역 추가
   guideTitle: { ko: '스마트폰 바탕화면에 앱 설치하기', en: 'Install App on Home Screen' },
   guideKakao: { ko: '1. 카톡 창 우측 하단(또는 상단) [점 3개] 클릭 -> [다른 브라우저로 열기]', en: '1. Tap [3 dots] in KakaoTalk -> [Open in other browser]' },
   guideApple: { ko: '2. 아이폰(Safari): 하단 [공유]버튼 -> [홈 화면에 추가]', en: '2. iPhone (Safari): Tap [Share] -> [Add to Home Screen]' },
-  guideGalaxy: { ko: '2. 갤럭시(Chrome): 우측 상단 [점 3개]버튼 -> [홈 화면에 추가]', en: '2. Galaxy (Chrome): Tap [3 dots] -> [Add to Home Screen]' }
+  guideGalaxy: { ko: '2. 갤럭시(Chrome): 우측 상단 [점 3개]버튼 -> [홈 화면에 추가]', en: '2. Galaxy (Chrome): Tap [3 dots] -> [Add to Home Screen]' },
+  
+  selected: { ko: '(선택됨)', en: '(Selected)' },
+  cancelMark: { ko: 'X', en: 'X' }
 };
 
 export default function Home() {
@@ -97,8 +99,6 @@ export default function Home() {
   const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' | 'info' } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lang, setLang] = useState<'ko' | 'en'>('ko');
-  
-  // 앱 설치 공지사항 표시 여부 상태
   const [showInstallGuide, setShowInstallGuide] = useState(false);
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
@@ -110,9 +110,11 @@ export default function Home() {
   const RESPONSES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQWYHu8VfgQPB8i5SHh577Ok32tuVLVnReeNZaUf5BJJdl_eO9aatGhl-RacqO_hY6EESrLl7EOzjiS/pub?gid=1712691725&single=true&output=csv';
   const ASSIGNMENT_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQWYHu8VfgQPB8i5SHh577Ok32tuVLVnReeNZaUf5BJJdl_eO9aatGhl-RacqO_hY6EESrLl7EOzjiS/pub?gid=294556834&single=true&output=csv'; 
   const SAVE_API_URL = 'https://script.google.com/macros/s/AKfycbyBJJe0HkVOf2vU32lvGZXuakS5gL0w6cdXWQmiyWVb2WcWNZkW9qEiDEnP2iEcazSx/exec';
+  const REGULAR_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQWYHu8VfgQPB8i5SHh577Ok32tuVLVnReeNZaUf5BJJdl_eO9aatGhl-RacqO_hY6EESrLl7EOzjiS/pub?gid=1990100498&single=true&output=csv';
 
   const [events, setEvents] = useState<ChurchEvent[]>([]);
   const [rawResponses, setRawResponses] = useState<any[]>([]); 
+  const [regularAttendees, setRegularAttendees] = useState<any[]>([]); // 정기 참석자 상태 추가
   const [savedAssignments, setSavedAssignments] = useState<any[]>([]); 
   const [currentDate, setCurrentDate] = useState(new Date()); 
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -128,7 +130,6 @@ export default function Home() {
     const savedLang = localStorage.getItem('church_ride_lang');
     if (savedLang === 'en' || savedLang === 'ko') setLang(savedLang);
 
-    // 공지사항 닫힘 여부 확인
     const guideDismissed = localStorage.getItem('church_ride_guide_dismissed');
     if (!guideDismissed) {
       setShowInstallGuide(true);
@@ -149,10 +150,11 @@ export default function Home() {
   const fetchAllData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const [calendarRes, responsesRes, assignmentsRes] = await Promise.all([
+      const [calendarRes, responsesRes, assignmentsRes, regularRes] = await Promise.all([
         fetch(`${CALENDAR_CSV_URL}&t=${new Date().getTime()}`).then(res => res.text()),
         fetch(`${RESPONSES_CSV_URL}&t=${new Date().getTime()}`).then(res => res.text()),
-        fetch(`${ASSIGNMENT_CSV_URL}&t=${new Date().getTime()}`).then(res => res.text())
+        fetch(`${ASSIGNMENT_CSV_URL}&t=${new Date().getTime()}`).then(res => res.text()),
+        REGULAR_CSV_URL !== 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQWYHu8VfgQPB8i5SHh577Ok32tuVLVnReeNZaUf5BJJdl_eO9aatGhl-RacqO_hY6EESrLl7EOzjiS/pub?gid=1990100498&single=true&output=csv' ? fetch(`${REGULAR_CSV_URL}&t=${new Date().getTime()}`).then(res => res.text()) : Promise.resolve('')
       ]);
 
       Papa.parse(calendarRes, { header: true, skipEmptyLines: true, complete: (res) => {
@@ -164,6 +166,7 @@ export default function Home() {
 
       Papa.parse(responsesRes, { header: true, skipEmptyLines: true, complete: (res) => setRawResponses(res.data) });
       if (assignmentsRes) Papa.parse(assignmentsRes, { header: true, skipEmptyLines: true, complete: (res) => setSavedAssignments(res.data) });
+      if (regularRes) Papa.parse(regularRes, { header: true, skipEmptyLines: true, complete: (res) => setRegularAttendees(res.data) });
       
     } catch (e) {
       showToast(t.loadFail[lang], 'error');
@@ -236,43 +239,80 @@ export default function Home() {
   const [selectedRider, setSelectedRider] = useState<string | null>(null);
   const [dragOverCarId, setDragOverCarId] = useState<string | 'waitlist' | null>(null);
 
+  // 자동 병합 로직 적용
   useEffect(() => {
     if (!adminSelectedEvent) { setPeople([]); return; }
-    const savedRow = savedAssignments.find(r => r['행사명'] === adminSelectedEvent);
-    let savedPeopleMap: Record<string, string | null> = {}; 
-    
-    if (savedRow && savedRow['데이터']) {
-      try {
-        JSON.parse(savedRow['데이터']).forEach((p: Person) => { if (p.role !== 'driver') savedPeopleMap[p.name] = p.carId; });
-      } catch (e) { console.error("데이터 읽기 실패", e); }
+    const currentEventObj = events.find(e => e.fullName === adminSelectedEvent);
+    const isRegular = currentEventObj?.type === 'regular';
+
+    const attendeeMap = new Map<string, Person>();
+
+    // 1. 정기 예배일 경우 고정 멤버를 먼저 채워넣음
+    if (isRegular && regularAttendees.length > 0) {
+      regularAttendees.forEach((row, idx) => {
+        const name = row['이름'];
+        if (!name) return;
+        const address = row['주소'] || '';
+        const rideType = row['이동 수단'] || '';
+        const capacityStr = String(row['정원'] || '').replace(/[^0-9]/g, '');
+        const capacity = capacityStr ? parseInt(capacityStr, 10) : 4;
+        
+        let role: 'driver' | 'rider' = rideType.includes('운전') ? 'driver' : 'rider';
+        let id = role === 'driver' ? `reg_driver_${idx}` : `reg_rider_${idx}`;
+        
+        attendeeMap.set(name, { id, name, role, capacity, carId: role === 'driver' ? id : null, address });
+      });
     }
 
-    const latestResponsesMap = new Map();
-    rawResponses.forEach((row) => {
+    // 2. 구글 폼 응답(최신 데이터)으로 덮어쓰거나 제외함
+    rawResponses.forEach((row, idx) => {
       const rowEvent = row['참석 행사'] || '';
       if (rowEvent === adminSelectedEvent) {
         const nameKey = Object.keys(row).find(key => key.includes('이름')) || '';
-        latestResponsesMap.set(row[nameKey] || '이름없음', row); 
+        const name = row[nameKey];
+        if (!name) return;
+
+        const attendanceStatus = String(row['참석 여부 (Attendance or not)'] || row['참석 여부'] || '');
+        const isAbsent = attendanceStatus.includes('불참');
+        const isAttending = attendanceStatus.includes('참석하겠습니다');
+
+        if (isAbsent) {
+          attendeeMap.delete(name); // 불참 제출 시 명단에서 완벽히 제외
+        } else if (isAttending) {
+          const addressKey = Object.keys(row).find(key => key.includes('주소') || key.includes('Address')) || '';
+          const address = addressKey ? row[addressKey] : '';
+          const rideTypeKey = Object.keys(row).find(key => key.includes('이동 수단') || key.includes('수단') || key.includes('Ride Information')) || '';
+          const rideType = rideTypeKey ? String(row[rideTypeKey]) : '';
+          const capacityKey = Object.keys(row).find(key => key.includes('정원') || key.includes('Capacity')) || '';
+          const capacityStr = capacityKey ? String(row[capacityKey]).replace(/[^0-9]/g, '') : '';
+          const capacity = capacityStr ? parseInt(capacityStr, 10) : 4;
+
+          let role: 'driver' | 'rider' = rideType.includes('운전 가능') ? 'driver' : 'rider';
+          let id = role === 'driver' ? `form_driver_${idx}` : `form_rider_${idx}`;
+          
+          attendeeMap.set(name, { id, name, role, capacity, carId: role === 'driver' ? id : null, address });
+        }
       }
     });
 
-    const dynamicDrivers: Person[] = [];
-    const dynamicRiders: Person[] = [];
-    Array.from(latestResponsesMap.values()).forEach((row, idx) => {
-      const isAttending = String(row['참석 여부 (Attendance or not)'] || row['참석 여부'] || '').includes('참석하겠습니다');
-      if (isAttending) {
-        const name = (Object.keys(row).find(key => key.includes('이름')) ? row[Object.keys(row).find(key => key.includes('이름'))!] : '이름없음');
-        const address = (Object.keys(row).find(key => key.includes('주소') || key.includes('Address')) ? row[Object.keys(row).find(key => key.includes('주소') || key.includes('Address'))!] : '');
-        const rideType = (Object.keys(row).find(key => key.includes('이동 수단') || key.includes('수단') || key.includes('Ride Information')) ? String(row[Object.keys(row).find(key => key.includes('이동 수단') || key.includes('수단') || key.includes('Ride Information'))!]) : '');
-        const capacityStr = (Object.keys(row).find(key => key.includes('정원') || key.includes('Capacity')) ? String(row[Object.keys(row).find(key => key.includes('정원') || key.includes('Capacity'))!]).replace(/[^0-9]/g, '') : '');
-        const capacity = capacityStr ? parseInt(capacityStr, 10) : 4;
+    // 3. 이미 배정 기록이 있다면 불러오기 (차량 ID 덮어쓰기)
+    const savedRow = savedAssignments.find(r => r['행사명'] === adminSelectedEvent);
+    if (savedRow && savedRow['데이터']) {
+      try {
+        const parsedData = JSON.parse(savedRow['데이터']);
+        parsedData.forEach((savedPerson: Person) => {
+          if (attendeeMap.has(savedPerson.name)) {
+            const currentPerson = attendeeMap.get(savedPerson.name)!;
+            if (currentPerson.role !== 'driver') {
+              currentPerson.carId = savedPerson.carId;
+            }
+          }
+        });
+      } catch (e) { console.error("데이터 읽기 실패", e); }
+    }
 
-        if (rideType.includes('운전 가능')) dynamicDrivers.push({ id: `driver_${idx}`, name, role: 'driver', capacity, carId: `driver_${idx}`, address });
-        else if (rideType.includes('라이드 필요') || !rideType) dynamicRiders.push({ id: `rider_${idx}`, name, role: 'rider', carId: savedPeopleMap[name] !== undefined ? savedPeopleMap[name] : null, address });
-      }
-    });
-    setPeople([...dynamicDrivers, ...dynamicRiders]);
-  }, [adminSelectedEvent, rawResponses, savedAssignments]);
+    setPeople(Array.from(attendeeMap.values()));
+  }, [adminSelectedEvent, rawResponses, savedAssignments, regularAttendees, events]);
 
   const assignToCar = (carId: string | null) => {
     if (!selectedRider) return;
@@ -382,14 +422,13 @@ export default function Home() {
       {toast && <div className="toast-enter" style={{ position: 'fixed', bottom: '100px', left: '50%', transform: 'translateX(-50%)', background: toast.type === 'error' ? '#ef4444' : toast.type === 'success' ? '#10b981' : '#3f3f46', color: '#fff', padding: '14px 24px', borderRadius: '30px', fontWeight: 'bold', fontSize: '14px', zIndex: 100, boxShadow: '0 8px 20px rgba(0,0,0,0.2)', whiteSpace: 'nowrap' }}>{toast.message}</div>}
 
       <header style={{ background: '#ffffff', padding: '18px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'sticky', top: 0, zIndex: 10, borderBottom: '1px solid #e4e4e7' }}>
-        <h1 style={{ margin: 0, fontSize: '18px', color: '#18181b', fontWeight: '900' }}>LivingStone Ride</h1>
+        <h1 style={{ margin: 0, fontSize: '18px', color: '#18181b', fontWeight: '900' }}>Livingstone Lift</h1>
         <button onClick={toggleLang} style={{ position: 'absolute', right: '20px', background: '#f8fafc', border: '1px solid #cbd5e1', padding: '6px 10px', borderRadius: '16px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', color: '#334155', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
           {lang === 'ko' ? 'EN' : 'KR'}
         </button>
       </header>
 
       <main style={{ padding: '20px' }}>
-        {/* 공지사항 박스 추가 */}
         {showInstallGuide && (
           <div style={{ background: '#fef3c7', border: '1px solid #fde68a', padding: '15px', borderRadius: '12px', marginBottom: '20px', position: 'relative' }}>
             <button onClick={dismissInstallGuide} style={{ position: 'absolute', top: '10px', right: '10px', background: 'transparent', border: 'none', fontSize: '14px', cursor: 'pointer', color: '#92400e', fontWeight: 'bold' }}>X</button>
@@ -542,7 +581,9 @@ export default function Home() {
                   <h3 style={{ margin: '0 0 15px 0', fontSize: '15px', color: '#18181b', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}>{t.waitlist[lang]} <span style={{ background: '#f4f4f5', padding: '2px 8px', borderRadius: '10px', fontSize: '12px', color: '#71717a' }}>{unassignedRiders.length}</span></h3>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                     {unassignedRiders.map(rider => (
-                      <button className="hover-btn" key={rider.id} draggable onDragStart={(e) => handleDragStart(e, rider.id)} onDragEnd={() => setSelectedRider(null)} onClick={(e) => { e.stopPropagation(); setSelectedRider(selectedRider === rider.id ? null : rider.id); }} style={{ padding: '8px 14px', borderRadius: '20px', border: 'none', fontWeight: 'bold', cursor: 'pointer', background: selectedRider === rider.id ? '#3b82f6' : '#f4f4f5', color: selectedRider === rider.id ? '#fff' : '#3f3f46', fontSize: '14px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>{rider.name}</button>
+                      <button className="hover-btn" key={rider.id} draggable onDragStart={(e) => handleDragStart(e, rider.id)} onDragEnd={() => setSelectedRider(null)} onClick={(e) => { e.stopPropagation(); setSelectedRider(selectedRider === rider.id ? null : rider.id); }} style={{ padding: '8px 14px', borderRadius: '20px', border: 'none', fontWeight: 'bold', cursor: 'pointer', background: selectedRider === rider.id ? '#3b82f6' : '#f4f4f5', color: selectedRider === rider.id ? '#fff' : '#3f3f46', fontSize: '14px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                        {rider.name} {selectedRider === rider.id && t.selected[lang]}
+                      </button>
                     ))}
                     {unassignedRiders.length === 0 && <span style={{ fontSize: '13px', color: '#a1a1aa' }}>{t.allAssgn[lang]}</span>}
                   </div>
@@ -566,7 +607,10 @@ export default function Home() {
                         </div>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', minHeight: '45px', background: '#f8fafc', padding: '12px', borderRadius: '10px', border: '1px inset #f1f5f9' }}>
                           {passengers.map(rider => (
-                            <button className="hover-btn" key={rider.id} draggable onDragStart={(e) => handleDragStart(e, rider.id)} onDragEnd={() => setSelectedRider(null)} onClick={(e) => { e.stopPropagation(); setSelectedRider(selectedRider === rider.id ? null : rider.id); }} style={{ padding: '6px 12px', borderRadius: '20px', border: '1px solid #cbd5e1', background: selectedRider === rider.id ? '#3b82f6' : '#ffffff', color: selectedRider === rider.id ? '#fff' : '#334155', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: '6px' }}>{rider.name} {selectedRider !== rider.id && <span style={{ color: '#94a3b8', fontSize: '12px', fontWeight: 'normal' }}>X</span>}</button>
+                            <button className="hover-btn" key={rider.id} draggable onDragStart={(e) => handleDragStart(e, rider.id)} onDragEnd={() => setSelectedRider(null)} onClick={(e) => { e.stopPropagation(); setSelectedRider(selectedRider === rider.id ? null : rider.id); }} style={{ padding: '6px 12px', borderRadius: '20px', border: '1px solid #cbd5e1', background: selectedRider === rider.id ? '#3b82f6' : '#ffffff', color: selectedRider === rider.id ? '#fff' : '#334155', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              {rider.name} 
+                              {selectedRider === rider.id ? ` ${t.selected[lang]}` : <span style={{ color: '#94a3b8', fontSize: '12px', fontWeight: 'normal', marginLeft: '4px' }}>{t.cancelMark[lang]}</span>}
+                            </button>
                           ))}
                           {passengers.length === 0 && <span style={{ fontSize: '13px', color: '#94a3b8', display: 'flex', alignItems: 'center', height: '100%' }}>{t.touch[lang]}</span>}
                         </div>
