@@ -593,7 +593,7 @@ export default function Home() {
       {toast && <div className="toast-enter" style={{ position: 'fixed', bottom: '100px', left: '50%', transform: 'translateX(-50%)', background: toast.type === 'error' ? '#ef4444' : toast.type === 'success' ? '#10b981' : '#3f3f46', color: '#fff', padding: '14px 24px', borderRadius: '30px', fontWeight: 'bold', fontSize: '14px', zIndex: 90, boxShadow: '0 8px 20px rgba(0,0,0,0.2)', whiteSpace: 'nowrap' }}>{toast.message}</div>}
 
       <header style={{ background: '#ffffff', padding: '15px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 10, borderBottom: '1px solid #e4e4e7' }}>
-        <h1 style={{ margin: 0, fontSize: '18px', color: '#18181b', fontWeight: '900' }}>LivingStone Ride</h1>
+        <h1 style={{ margin: 0, fontSize: '18px', color: '#18181b', fontWeight: '900' }}>Livingstone Lift</h1>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button onClick={() => setIsHelpOpen(true)} style={{ background: '#f4f4f5', border: '1px solid #e4e4e7', padding: '6px 12px', borderRadius: '16px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', color: '#3f3f46' }}>
             {t.helpBtn[lang]}
