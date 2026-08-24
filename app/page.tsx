@@ -105,10 +105,12 @@ const t = {
   man4Desc: { ko: '매주 예배에 참석 하는 인원의 경우 목사님께 말씀하셔서 정기 참석자 명단에 들어가면 따로 설문지로 신청하지 않아도 자동으로 참석 처리 됩니다. 못 가는 경우에만 설문지를 통해 취소하시면 됩니다.', en: 'If you attend weekly, ask the Pastor to add you to the regular attendee list. You will be automatically assigned without needing to apply. Only submit a cancellation form when you cannot attend.' },
   man5: { ko: '5. 인원 배정 안내', en: '5. Ride Assignment Notice' },
   man5Desc: { ko: '인원 배정의 경우 목사님 또는 운전자분들이 우선적으로 배정하실 예정입니다.', en: 'The Pastor or drivers will have priority in managing and assigning rides.' },
-  man6: { ko: '6. 신청 마감 시간', en: '6. Application Deadline' },
-  man6Desc: { ko: '원활한 인원 배정 및 업데이트를 위해 일정 2시간 전까지는 모든 신청을 끝내주시길 바랍니다.', en: 'For smooth ride assignments and updates, please complete all applications at least 2 hours before the event.' },
-  man7: { ko: '7. 피드백 및 문의', en: '7. Feedback & Contact' },
-  man7Desc: { ko: '피드백 및 추가 아이디어는 김동호에게 언제든 연락바랍니다.', en: 'Please feel free to contact Dongho Kim for any feedback or new ideas.' },
+  man6: { ko: '6. 내비게이션 사용 안내', en: '6. Navigation Guide' },
+  man6Desc: { ko: '배정 완료 후 운전자가 [내비게이션 안내] 버튼을 누르면 구글 지도 앱으로 연결됩니다. 지도 앱이 열리면 최적의 동선에 맞게 탑승자 픽업(경유지) 순서를 직접 재배열해 주시기 바랍니다.', en: 'When a driver clicks the [Navigation] button after assignments, Google Maps will open. Please manually rearrange the stops in the map app for the most efficient route.' },
+  man7: { ko: '7. 신청 마감 시간', en: '7. Application Deadline' },
+  man7Desc: { ko: '원활한 인원 배정 및 업데이트를 위해 일정 2시간 전까지는 모든 신청을 끝내주시길 바랍니다.', en: 'For smooth ride assignments and updates, please complete all applications at least 2 hours before the event.' },
+  man8: { ko: '8. 피드백 및 문의', en: '8. Feedback & Contact' },
+  man8Desc: { ko: '피드백 및 추가 아이디어는 김동호에게 언제든 연락바랍니다.', en: 'Please feel free to contact Dongho Kim for any feedback or new ideas.' },
   closeBtn: { ko: '닫기', en: 'Close' }
 };
 
@@ -489,6 +491,11 @@ export default function Home() {
             <div style={{ marginBottom: '15px' }}>
               <h3 style={{ margin: '0 0 5px 0', fontSize: '15px', color: '#2563eb', fontWeight: 'bold' }}>{t.man4[lang]}</h3>
               <p style={{ margin: 0, fontSize: '14px', color: '#3f3f46', lineHeight: '1.5' }}>{t.man4Desc[lang]}</p>
+            </div>
+            
+            <div style={{ marginBottom: '15px' }}>
+              <h3 style={{ margin: '0 0 5px 0', fontSize: '15px', color: '#2563eb', fontWeight: 'bold' }}>{t.man6[lang]}</h3>
+              <p style={{ margin: 0, fontSize: '14px', color: '#3f3f46', lineHeight: '1.5' }}>{t.man6Desc[lang]}</p>
             </div>
             
             <div style={{ marginBottom: '15px' }}>
