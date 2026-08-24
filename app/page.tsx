@@ -11,6 +11,7 @@ interface ChurchEvent {
 interface Person {
   id: string; name: string; role: 'driver' | 'rider';
   carId: string | null; capacity?: number; address?: string; 
+  pickupTime?: string;
 }
 
 interface UserProfile {
@@ -248,7 +249,12 @@ export default function Home() {
       if (me.role === 'driver') return { status: t.statSelf[lang], color: '#10b981' };
       if (me.carId) {
         const driver = data.find((p: any) => p.id === me.carId);
-        return driver ? { status: lang === 'ko' ? `${driver.name}님 차량 탑승` : `Riding with ${driver.name}`, color: '#3b82f6' } : { status: t.statDone[lang], color: '#3b82f6' };
+        // 여기서부터 추가 및 변경된 부분
+        let timeStr = '';
+        if (driver && driver.pickupTime) {
+          timeStr = lang === 'ko' ? ` (픽업: ${driver.pickupTime})` : ` (Pickup: ${driver.pickupTime})`;
+        }
+        return driver ? { status: lang === 'ko' ? `${driver.name}님 차량 탑승${timeStr}` : `Riding with ${driver.name}${timeStr}`, color: '#3b82f6' } : { status: t.statDone[lang], color: '#3b82f6' };
       }
       return { status: t.statWait[lang], color: '#f59e0b' };
     } catch (e) { return null; }
@@ -374,7 +380,8 @@ export default function Home() {
       const isFull = passengers.length >= (driver.capacity || 0);
       const statusTxt = isFull ? t.full[lang] : (lang === 'ko' ? `${driver.capacity! - passengers.length}자리 남음` : `${driver.capacity! - passengers.length} seats left`);
       const riderTxt = passengers.map(p => p.name).join(', ') || (lang === 'ko' ? '빈 차' : 'Empty');
-      text += `${t.car[lang]} ${driver.name} (${statusTxt})\n - ${lang === 'ko' ? '탑승' : 'Riders'}: ${riderTxt}\n\n`;
+      const timeTxt = driver.pickupTime ? (lang === 'ko' ? ` [픽업: ${driver.pickupTime}]` : ` [Pickup: ${driver.pickupTime}]`) : '';
+      text += `${t.car[lang]} ${driver.name} (${statusTxt})${timeTxt}\n - ${lang === 'ko' ? '탑승' : 'Riders'}: ${riderTxt}\n\n`;
     });
     text += `[${t.waitlist[lang]}]\n - ${unassignedRiders.length > 0 ? unassignedRiders.map(p => p.name).join(', ') : (lang === 'ko' ? '없음' : 'None')}\n`;
     navigator.clipboard.writeText(text).then(() => showToast(t.copyOk[lang], 'success'));
@@ -710,6 +717,22 @@ export default function Home() {
                             <span style={{ fontSize: '12px', background: isFull ? '#fee2e2' : '#dcfce7', color: isFull ? '#dc2626' : '#166534', padding: '3px 8px', borderRadius: '10px', fontWeight: 'bold' }}>{passengers.length} / {driver.capacity}</span>
                           </div>
                           <button className="hover-btn" onClick={(e) => { e.stopPropagation(); openRouteMap(driver.id); }} style={{ padding: '8px 12px', background: '#18181b', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>{t.navi[lang]}</button>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px', background: '#f4f4f5', padding: '8px 12px', borderRadius: '8px' }}>
+                          <span style={{ fontSize: '13px', color: '#3f3f46', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+                            {lang === 'ko' ? '픽업 안내:' : 'Pickup Info:'}
+                          </span>
+                          <input 
+                            type="text" 
+                            placeholder={lang === 'ko' ? "예: 10:30 (순차 픽업) / 개별 연락" : "ex: 10:30 AM / Will text you"}
+                            value={driver.pickupTime || ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setPeople(prev => prev.map(p => p.id === driver.id ? { ...p, pickupTime: val } : p));
+                            }}
+                            onClick={(e) => e.stopPropagation()} 
+                            style={{ flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid #d4d4d8', fontSize: '14px', background: '#fff' }}
+                          />
                         </div>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', minHeight: '45px', background: '#f8fafc', padding: '12px', borderRadius: '10px', border: '1px inset #f1f5f9' }}>
                           {passengers.map(rider => (
