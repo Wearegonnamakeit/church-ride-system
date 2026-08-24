@@ -27,7 +27,7 @@ const t = {
   saveOk: { ko: '배정 결과가 안전하게 저장되었습니다!', en: 'Assignments saved successfully!' },
   saveFail: { ko: '오류가 발생했습니다.', en: 'An error occurred.' },
   copyOk: { ko: '카카오톡 복사 완료!', en: 'Copied to clipboard!' },
-  routeFail: { ko: '경로를 생성할 주소가 부족합니다.', en: 'Not enough addresses for a route.' },
+  routeFail: { ko: '경로를 생성할 주소를 찾을 수 없습니다.', en: 'Not enough addresses for a route.' },
   
   promo: { ko: '내 정보를 등록하면 1초 만에 원클릭 신청이 가능합니다!', en: 'Register info for 1-second 1-click application!' },
   goProfile: { ko: '내 정보 등록하러 가기', en: 'Go to Profile Settings' },
@@ -91,7 +91,25 @@ const t = {
   guideGalaxy: { ko: '2. 갤럭시(Chrome): 우측 상단 [점 3개]버튼 -> [홈 화면에 추가]', en: '2. Galaxy (Chrome): Tap [3 dots] -> [Add to Home Screen]' },
   
   selected: { ko: '(선택됨)', en: '(Selected)' },
-  cancelMark: { ko: 'X', en: 'X' }
+  cancelMark: { ko: 'X', en: 'X' },
+
+  helpBtn: { ko: '도움말', en: 'Help' },
+  manTitle: { ko: '앱 사용 설명서', en: 'How to use this app' },
+  man1: { ko: '1. 내 정보 설정 (최초 1회)', en: '1. Profile Setup (Once)' },
+  man1Desc: { ko: '하단 [내 정보 설정] 탭에서 이름과 연락처를 먼저 저장하세요. 한 번만 저장하면 계속 유지됩니다. 바꾸고 싶은 경우 정보 업데이트 후 새로 저장하시면 업데이트 됩니다.', en: 'Save your name and contact info in the [Profile] tab first. It remains saved permanently. To change it, update the info and save again.' },
+  man2: { ko: '2. 1초 자동 신청', en: '2. 1-Click Auto Apply' },
+  man2Desc: { ko: '[달력 및 신청] 탭에서 원하는 일정의 [원클릭 신청] 버튼을 누르면 신청서가 자동으로 완성됩니다. 차량의 경우만 한번 더 확인 부탁 드립니다.', en: 'Click [1-Click Apply] on the desired event in the [Calendar] tab to auto-fill the form. Please double-check your ride option.' },
+  man3: { ko: '3. 내 배정 상태 확인', en: '3. Check Ride Status' },
+  man3Desc: { ko: '배정이 완료되면, 앱의 배정 관리 화면에 내가 탑승할 차량 이름이 실시간으로 표시됩니다.', en: 'Once assigned, the name of your designated vehicle will be displayed in real-time.' },
+  man4: { ko: '4. 정기 참석자 신청 및 취소', en: '4. Regular Attendee Apply & Cancel' },
+  man4Desc: { ko: '매주 예배에 참석 하는 인원의 경우 목사님께 말씀하셔서 정기 참석자 명단에 들어가면 따로 설문지로 신청하지 않아도 자동으로 참석 처리 됩니다. 못 가는 경우에만 설문지를 통해 취소하시면 됩니다.', en: 'If you attend weekly, ask the Pastor to add you to the regular attendee list. You will be automatically assigned without needing to apply. Only submit a cancellation form when you cannot attend.' },
+  man5: { ko: '5. 인원 배정 안내', en: '5. Ride Assignment Notice' },
+  man5Desc: { ko: '인원 배정의 경우 목사님 또는 운전자분들이 우선적으로 배정하실 예정입니다.', en: 'The Pastor or drivers will have priority in managing and assigning rides.' },
+  man6: { ko: '6. 신청 마감 시간', en: '6. Application Deadline' },
+  man6Desc: { ko: '원활한 인원 배정 및 업데이트를 위해 일정 2시간 전까지는 모든 신청을 끝내주시길 바랍니다.', en: 'For smooth ride assignments and updates, please complete all applications at least 2 hours before the event.' },
+  man7: { ko: '7. 피드백 및 문의', en: '7. Feedback & Contact' },
+  man7Desc: { ko: '피드백 및 추가 아이디어는 김동호에게 언제든 연락바랍니다.', en: 'Please feel free to contact Dongho Kim for any feedback or new ideas.' },
+  closeBtn: { ko: '닫기', en: 'Close' }
 };
 
 export default function Home() {
@@ -100,6 +118,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [lang, setLang] = useState<'ko' | 'en'>('ko');
   const [showInstallGuide, setShowInstallGuide] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
     setToast({ message, type });
@@ -114,7 +133,7 @@ export default function Home() {
 
   const [events, setEvents] = useState<ChurchEvent[]>([]);
   const [rawResponses, setRawResponses] = useState<any[]>([]); 
-  const [regularAttendees, setRegularAttendees] = useState<any[]>([]); // 정기 참석자 상태 추가
+  const [regularAttendees, setRegularAttendees] = useState<any[]>([]); 
   const [savedAssignments, setSavedAssignments] = useState<any[]>([]); 
   const [currentDate, setCurrentDate] = useState(new Date()); 
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -154,7 +173,7 @@ export default function Home() {
         fetch(`${CALENDAR_CSV_URL}&t=${new Date().getTime()}`).then(res => res.text()),
         fetch(`${RESPONSES_CSV_URL}&t=${new Date().getTime()}`).then(res => res.text()),
         fetch(`${ASSIGNMENT_CSV_URL}&t=${new Date().getTime()}`).then(res => res.text()),
-        REGULAR_CSV_URL !== 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQWYHu8VfgQPB8i5SHh577Ok32tuVLVnReeNZaUf5BJJdl_eO9aatGhl-RacqO_hY6EESrLl7EOzjiS/pub?gid=1990100498&single=true&output=csv' ? fetch(`${REGULAR_CSV_URL}&t=${new Date().getTime()}`).then(res => res.text()) : Promise.resolve('')
+        fetch(`${REGULAR_CSV_URL}&t=${new Date().getTime()}`).then(res => res.text())
       ]);
 
       Papa.parse(calendarRes, { header: true, skipEmptyLines: true, complete: (res) => {
@@ -239,7 +258,6 @@ export default function Home() {
   const [selectedRider, setSelectedRider] = useState<string | null>(null);
   const [dragOverCarId, setDragOverCarId] = useState<string | 'waitlist' | null>(null);
 
-  // 자동 병합 로직 적용
   useEffect(() => {
     if (!adminSelectedEvent) { setPeople([]); return; }
     const currentEventObj = events.find(e => e.fullName === adminSelectedEvent);
@@ -247,7 +265,6 @@ export default function Home() {
 
     const attendeeMap = new Map<string, Person>();
 
-    // 1. 정기 예배일 경우 고정 멤버를 먼저 채워넣음
     if (isRegular && regularAttendees.length > 0) {
       regularAttendees.forEach((row, idx) => {
         const name = row['이름'];
@@ -264,7 +281,6 @@ export default function Home() {
       });
     }
 
-    // 2. 구글 폼 응답(최신 데이터)으로 덮어쓰거나 제외함
     rawResponses.forEach((row, idx) => {
       const rowEvent = row['참석 행사'] || '';
       if (rowEvent === adminSelectedEvent) {
@@ -277,7 +293,7 @@ export default function Home() {
         const isAttending = attendanceStatus.includes('참석하겠습니다');
 
         if (isAbsent) {
-          attendeeMap.delete(name); // 불참 제출 시 명단에서 완벽히 제외
+          attendeeMap.delete(name); 
         } else if (isAttending) {
           const addressKey = Object.keys(row).find(key => key.includes('주소') || key.includes('Address')) || '';
           const address = addressKey ? row[addressKey] : '';
@@ -295,7 +311,6 @@ export default function Home() {
       }
     });
 
-    // 3. 이미 배정 기록이 있다면 불러오기 (차량 ID 덮어쓰기)
     const savedRow = savedAssignments.find(r => r['행사명'] === adminSelectedEvent);
     if (savedRow && savedRow['데이터']) {
       try {
@@ -417,15 +432,99 @@ export default function Home() {
         .highlight-drop { animation: pulse-border 1.5s infinite !important; border-width: 2px !important; border-style: dashed !important; cursor: pointer; }
         .toast-enter { animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes slideUp { from { transform: translate(-50%, 150%); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+        
+        input, select, textarea {
+          appearance: none;
+          -webkit-appearance: none;
+          color: #000000 !important;
+          opacity: 1 !important;
+          -webkit-text-fill-color: #000000 !important;
+          font-size: 16px !important; 
+          background-color: #ffffff;
+        }
+        input::placeholder {
+          color: #a1a1aa !important;
+          -webkit-text-fill-color: #a1a1aa !important;
+        }
+        
+        .modal-overlay {
+          position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(0,0,0,0.5); z-index: 100;
+          display: flex; align-items: center; justify-content: center;
+          animation: fadeIn 0.2s ease-out forwards;
+        }
+        .modal-content {
+          background: #ffffff; width: 90%; max-width: 450px;
+          max-height: 85vh; overflow-y: auto;
+          border-radius: 16px; padding: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+          transform: translateY(20px);
+          animation: slideUpModal 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUpModal { to { transform: translateY(0); } }
       `}</style>
 
-      {toast && <div className="toast-enter" style={{ position: 'fixed', bottom: '100px', left: '50%', transform: 'translateX(-50%)', background: toast.type === 'error' ? '#ef4444' : toast.type === 'success' ? '#10b981' : '#3f3f46', color: '#fff', padding: '14px 24px', borderRadius: '30px', fontWeight: 'bold', fontSize: '14px', zIndex: 100, boxShadow: '0 8px 20px rgba(0,0,0,0.2)', whiteSpace: 'nowrap' }}>{toast.message}</div>}
+      {isHelpOpen && (
+        <div className="modal-overlay" onClick={() => setIsHelpOpen(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2 style={{ margin: '0 0 20px 0', fontSize: '18px', color: '#18181b', fontWeight: 'bold', borderBottom: '2px solid #f4f4f5', paddingBottom: '15px' }}>
+              {t.manTitle[lang]}
+            </h2>
+            
+            <div style={{ marginBottom: '15px' }}>
+              <h3 style={{ margin: '0 0 5px 0', fontSize: '15px', color: '#2563eb', fontWeight: 'bold' }}>{t.man1[lang]}</h3>
+              <p style={{ margin: 0, fontSize: '14px', color: '#3f3f46', lineHeight: '1.5' }}>{t.man1Desc[lang]}</p>
+            </div>
+            
+            <div style={{ marginBottom: '15px' }}>
+              <h3 style={{ margin: '0 0 5px 0', fontSize: '15px', color: '#2563eb', fontWeight: 'bold' }}>{t.man2[lang]}</h3>
+              <p style={{ margin: 0, fontSize: '14px', color: '#3f3f46', lineHeight: '1.5' }}>{t.man2Desc[lang]}</p>
+            </div>
+            
+            <div style={{ marginBottom: '15px' }}>
+              <h3 style={{ margin: '0 0 5px 0', fontSize: '15px', color: '#2563eb', fontWeight: 'bold' }}>{t.man3[lang]}</h3>
+              <p style={{ margin: 0, fontSize: '14px', color: '#3f3f46', lineHeight: '1.5' }}>{t.man3Desc[lang]}</p>
+            </div>
+            
+            <div style={{ marginBottom: '15px' }}>
+              <h3 style={{ margin: '0 0 5px 0', fontSize: '15px', color: '#2563eb', fontWeight: 'bold' }}>{t.man4[lang]}</h3>
+              <p style={{ margin: 0, fontSize: '14px', color: '#3f3f46', lineHeight: '1.5' }}>{t.man4Desc[lang]}</p>
+            </div>
+            
+            <div style={{ marginBottom: '15px' }}>
+              <h3 style={{ margin: '0 0 5px 0', fontSize: '15px', color: '#2563eb', fontWeight: 'bold' }}>{t.man5[lang]}</h3>
+              <p style={{ margin: 0, fontSize: '14px', color: '#3f3f46', lineHeight: '1.5' }}>{t.man5Desc[lang]}</p>
+            </div>
+            
+            <div style={{ marginBottom: '15px' }}>
+              <h3 style={{ margin: '0 0 5px 0', fontSize: '15px', color: '#2563eb', fontWeight: 'bold' }}>{t.man6[lang]}</h3>
+              <p style={{ margin: 0, fontSize: '14px', color: '#3f3f46', lineHeight: '1.5' }}>{t.man6Desc[lang]}</p>
+            </div>
+            
+            <div style={{ marginBottom: '25px' }}>
+              <h3 style={{ margin: '0 0 5px 0', fontSize: '15px', color: '#2563eb', fontWeight: 'bold' }}>{t.man7[lang]}</h3>
+              <p style={{ margin: 0, fontSize: '14px', color: '#3f3f46', lineHeight: '1.5' }}>{t.man7Desc[lang]}</p>
+            </div>
 
-      <header style={{ background: '#ffffff', padding: '18px 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'sticky', top: 0, zIndex: 10, borderBottom: '1px solid #e4e4e7' }}>
-        <h1 style={{ margin: 0, fontSize: '18px', color: '#18181b', fontWeight: '900' }}>Livingstone Lift</h1>
-        <button onClick={toggleLang} style={{ position: 'absolute', right: '20px', background: '#f8fafc', border: '1px solid #cbd5e1', padding: '6px 10px', borderRadius: '16px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', color: '#334155', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
-          {lang === 'ko' ? 'EN' : 'KR'}
-        </button>
+            <button className="hover-btn" onClick={() => setIsHelpOpen(false)} style={{ width: '100%', padding: '12px', background: '#18181b', color: '#ffffff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '15px' }}>
+              {t.closeBtn[lang]}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {toast && <div className="toast-enter" style={{ position: 'fixed', bottom: '100px', left: '50%', transform: 'translateX(-50%)', background: toast.type === 'error' ? '#ef4444' : toast.type === 'success' ? '#10b981' : '#3f3f46', color: '#fff', padding: '14px 24px', borderRadius: '30px', fontWeight: 'bold', fontSize: '14px', zIndex: 90, boxShadow: '0 8px 20px rgba(0,0,0,0.2)', whiteSpace: 'nowrap' }}>{toast.message}</div>}
+
+      <header style={{ background: '#ffffff', padding: '15px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 10, borderBottom: '1px solid #e4e4e7' }}>
+        <h1 style={{ margin: 0, fontSize: '18px', color: '#18181b', fontWeight: '900' }}>LivingStone Ride</h1>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button onClick={() => setIsHelpOpen(true)} style={{ background: '#f4f4f5', border: '1px solid #e4e4e7', padding: '6px 12px', borderRadius: '16px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', color: '#3f3f46' }}>
+            {t.helpBtn[lang]}
+          </button>
+          <button onClick={toggleLang} style={{ background: '#f8fafc', border: '1px solid #cbd5e1', padding: '6px 10px', borderRadius: '16px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', color: '#334155' }}>
+            {lang === 'ko' ? 'EN' : 'KR'}
+          </button>
+        </div>
       </header>
 
       <main style={{ padding: '20px' }}>
@@ -520,11 +619,11 @@ export default function Home() {
           <div style={{ background: '#fff', padding: '25px', borderRadius: '16px', border: '1px solid #e4e4e7', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
             <h2 style={{ margin: '0 0 5px 0', fontSize: '20px', color: '#18181b', fontWeight: 'bold' }}>{t.profTitle[lang]}</h2>
             <p style={{ color: '#71717a', fontSize: '13px', marginBottom: '25px', lineHeight: '1.5' }}>{t.profDesc[lang]}</p>
-            <div style={{ marginBottom: '15px' }}><label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#3f3f46', marginBottom: '6px' }}>{t.name[lang]}</label><input type="text" value={profile.name} onChange={(e) => setProfile({...profile, name: e.target.value})} placeholder="Alex" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #d4d4d8', fontSize: '15px' }} /></div>
-            <div style={{ marginBottom: '15px' }}><label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#3f3f46', marginBottom: '6px' }}>{t.phone[lang]}</label><input type="tel" inputMode="numeric" pattern="[0-9]*" value={profile.phone} onChange={handlePhoneChange} placeholder="Only numbers" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #d4d4d8', fontSize: '15px' }} /></div>
+            <div style={{ marginBottom: '15px' }}><label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#3f3f46', marginBottom: '6px' }}>{t.name[lang]}</label><input type="text" value={profile.name} onChange={(e) => setProfile({...profile, name: e.target.value})} placeholder="Alex" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #d4d4d8', fontSize: '16px' }} /></div>
+            <div style={{ marginBottom: '15px' }}><label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#3f3f46', marginBottom: '6px' }}>{t.phone[lang]}</label><input type="tel" inputMode="numeric" pattern="[0-9]*" value={profile.phone} onChange={handlePhoneChange} placeholder="Only numbers" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #d4d4d8', fontSize: '16px' }} /></div>
             
             <div style={{ marginBottom: '15px' }}><label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#3f3f46', marginBottom: '6px' }}>{t.ride[lang]}</label>
-              <select value={profile.rideType} onChange={(e) => setProfile({...profile, rideType: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #d4d4d8', fontSize: '14px', background: '#fff' }}>
+              <select value={profile.rideType} onChange={(e) => setProfile({...profile, rideType: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #d4d4d8', fontSize: '16px', background: '#fff' }}>
                 <option value="">{t.optSel[lang]}</option>
                 <option value="라이드 필요 (탑승자, I need ride system)">{t.optRide[lang]}</option>
                 <option value="운전 가능 (다른 사람 탑승 가능, I can give a ride)">{t.optDrive[lang]}</option>
@@ -532,8 +631,8 @@ export default function Home() {
               </select>
             </div>
             
-            <div style={{ marginBottom: '15px' }}><label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#3f3f46', marginBottom: '6px' }}>{t.addr[lang]}</label><input type="text" value={profile.address} onChange={(e) => setProfile({...profile, address: e.target.value})} placeholder="123 Main st" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #d4d4d8', fontSize: '15px' }} /></div>
-            {profile.rideType.includes('운전 가능') && (<div style={{ marginBottom: '20px' }}><label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#3f3f46', marginBottom: '6px' }}>{t.cap[lang]}</label><input type="number" inputMode="numeric" pattern="[0-9]*" value={profile.capacity} onChange={(e) => setProfile({...profile, capacity: e.target.value})} placeholder="4" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #d4d4d8', fontSize: '15px' }} /></div>)}
+            <div style={{ marginBottom: '15px' }}><label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#3f3f46', marginBottom: '6px' }}>{t.addr[lang]}</label><input type="text" value={profile.address} onChange={(e) => setProfile({...profile, address: e.target.value})} placeholder="123 Main st" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #d4d4d8', fontSize: '16px' }} /></div>
+            {profile.rideType.includes('운전 가능') && (<div style={{ marginBottom: '20px' }}><label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#3f3f46', marginBottom: '6px' }}>{t.cap[lang]}</label><input type="number" inputMode="numeric" pattern="[0-9]*" value={profile.capacity} onChange={(e) => setProfile({...profile, capacity: e.target.value})} placeholder="4" style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #d4d4d8', fontSize: '16px' }} /></div>)}
             <button className="hover-btn" onClick={handleProfileSave} style={{ width: '100%', padding: '14px', background: '#18181b', color: '#ffffff', border: 'none', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', fontSize: '15px', marginTop: '10px' }}>{t.btnSaveProf[lang]}</button>
           </div>
         )}
@@ -550,7 +649,7 @@ export default function Home() {
             </div>
 
             <div style={{ marginBottom: '20px' }}>
-              <select value={adminSelectedEvent} onChange={(e) => setAdminSelectedEvent(e.target.value)} style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid #d4d4d8', fontSize: '15px', background: '#fff', cursor: 'pointer', color: '#18181b', fontWeight: 'bold' }}>
+              <select value={adminSelectedEvent} onChange={(e) => setAdminSelectedEvent(e.target.value)} style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid #d4d4d8', fontSize: '16px', background: '#fff', cursor: 'pointer', color: '#18181b', fontWeight: 'bold' }}>
                 <option value="">{t.selEvt[lang]}</option>
                 {uniqueEvents.map(eventName => <option key={eventName} value={eventName}>{eventName}</option>)}
               </select>
