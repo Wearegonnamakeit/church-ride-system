@@ -494,11 +494,6 @@ export default function Home() {
             </div>
             
             <div style={{ marginBottom: '15px' }}>
-              <h3 style={{ margin: '0 0 5px 0', fontSize: '15px', color: '#2563eb', fontWeight: 'bold' }}>{t.man6[lang]}</h3>
-              <p style={{ margin: 0, fontSize: '14px', color: '#3f3f46', lineHeight: '1.5' }}>{t.man6Desc[lang]}</p>
-            </div>
-            
-            <div style={{ marginBottom: '15px' }}>
               <h3 style={{ margin: '0 0 5px 0', fontSize: '15px', color: '#2563eb', fontWeight: 'bold' }}>{t.man5[lang]}</h3>
               <p style={{ margin: 0, fontSize: '14px', color: '#3f3f46', lineHeight: '1.5' }}>{t.man5Desc[lang]}</p>
             </div>
@@ -508,9 +503,14 @@ export default function Home() {
               <p style={{ margin: 0, fontSize: '14px', color: '#3f3f46', lineHeight: '1.5' }}>{t.man6Desc[lang]}</p>
             </div>
             
-            <div style={{ marginBottom: '25px' }}>
+            <div style={{ marginBottom: '15px' }}>
               <h3 style={{ margin: '0 0 5px 0', fontSize: '15px', color: '#2563eb', fontWeight: 'bold' }}>{t.man7[lang]}</h3>
               <p style={{ margin: 0, fontSize: '14px', color: '#3f3f46', lineHeight: '1.5' }}>{t.man7Desc[lang]}</p>
+            </div>
+            
+            <div style={{ marginBottom: '25px' }}>
+              <h3 style={{ margin: '0 0 5px 0', fontSize: '15px', color: '#2563eb', fontWeight: 'bold' }}>{t.man8[lang]}</h3>
+              <p style={{ margin: 0, fontSize: '14px', color: '#3f3f46', lineHeight: '1.5' }}>{t.man8Desc[lang]}</p>
             </div>
 
             <button className="hover-btn" onClick={() => setIsHelpOpen(false)} style={{ width: '100%', padding: '12px', background: '#18181b', color: '#ffffff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '15px' }}>
