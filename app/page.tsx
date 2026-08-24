@@ -11,7 +11,7 @@ interface ChurchEvent {
 interface Person {
   id: string; name: string; role: 'driver' | 'rider';
   carId: string | null; capacity?: number; address?: string; 
-  pickupTime?: string;
+  pickupTime?: string; 
 }
 
 interface UserProfile {
@@ -41,12 +41,13 @@ const t = {
   loc: { ko: '장소:', en: 'Location:' },
   myStat: { ko: '내 배정 상태:', en: 'My Ride Status:' },
   statWait: { ko: '대기 중 (아직 배정되지 않음)', en: 'Waiting (Not assigned yet)' },
-  statSelf: { ko: '본인 차량으로 운행', en: 'Driving own car' },
+  statSelf: { ko: '본인 차량 운행', en: 'Driving own car' },
   statDone: { ko: '배정 완료', en: 'Assignment Complete' },
   btnApply1: { ko: '원클릭 신청', en: '1-Click Apply' },
   btnCancel: { ko: '취소하기', en: 'Cancel' },
   btnApplyM: { ko: '수동으로 신청하기', en: 'Apply Manually' },
   noEvents: { ko: '등록된 행사가 없습니다.', en: 'No events registered.' },
+  alreadyApplied: { ko: '신청 완료됨 (수정하기)', en: 'Applied (Edit)' },
   
   profTitle: { ko: '내 프로필 설정', en: 'My Profile Settings' },
   profDesc: { ko: '여기에 정보를 한 번만 저장해두면, 앞으로 버튼 클릭 한 번에 폼이 자동 완성됩니다.', en: 'Save your info here once, and forms will auto-fill with one click.' },
@@ -64,7 +65,7 @@ const t = {
   
   admTitle: { ko: '차량 수동 배정', en: 'Manual Ride Assignment' },
   refresh: { ko: '갱신', en: 'Refresh' },
-  share: { ko: '카톡 공유', en: 'Share' },
+  share: { ko: '전체 카톡 공유', en: 'Share All' },
   saving: { ko: '저장중..', en: 'Saving..' },
   saveRes: { ko: '결과 저장', en: 'Save Results' },
   selEvt: { ko: '-- 배정할 행사를 선택하세요 --', en: '-- Select an event to assign --' },
@@ -76,7 +77,8 @@ const t = {
   carList: { ko: '차량 목록', en: 'Car List' },
   car: { ko: '[차량]', en: '[Car]' },
   full: { ko: '만차', en: 'FULL' },
-  navi: { ko: '내비게이션 안내', en: 'Navigation' },
+  navi: { ko: '내비게이션', en: 'Navi' },
+  indivCopy: { ko: '명단 복사', en: 'Copy List' },
   touch: { ko: '이름을 터치해서 이곳으로 보내세요', en: 'Touch a name to send here' },
   noDrv: { ko: '아직 신청한 운전자가 없습니다.', en: 'No drivers have applied yet.' },
   admDesc1: { ko: '위 목록에서 행사를 선택하시면', en: 'Select an event from the list above' },
@@ -237,6 +239,36 @@ export default function Home() {
     return url;
   };
 
+  // [기능 추가 2] 중복 신청 확인 로직
+  const checkApplicationStatus = (eventName: string, type: 'regular' | 'special') => {
+    if (!profile.name) return false;
+    let isApplied = false;
+    
+    if (type === 'regular' && regularAttendees.length > 0) {
+      const isRegular = regularAttendees.some(row => row['이름'] === profile.name);
+      if (isRegular) isApplied = true;
+    }
+
+    const myResponses = rawResponses.filter(row => {
+      const rowEvent = row['참석 행사'] || '';
+      const nameKey = Object.keys(row).find(key => key.includes('이름')) || '';
+      return rowEvent === eventName && row[nameKey] === profile.name;
+    });
+
+    if (myResponses.length > 0) {
+      const latestResponse = myResponses[myResponses.length - 1];
+      const attendanceStatus = String(latestResponse['참석 여부 (Attendance or not)'] || latestResponse['참석 여부'] || '');
+      if (attendanceStatus.includes('불참')) {
+        isApplied = false;
+      } else if (attendanceStatus.includes('참석')) {
+        isApplied = true;
+      }
+    }
+    
+    return isApplied;
+  };
+
+  // [기능 추가 1] 달력 배정 상태창에 운전자 및 픽업 안내 노출 추가
   const getMyRideStatus = (eventName: string) => {
     if (!profile.name) return null;
     const assignmentRow = savedAssignments.find(a => a['행사명'] === eventName);
@@ -246,13 +278,19 @@ export default function Home() {
       const data = JSON.parse(assignmentRow['데이터']);
       const me = data.find((p: any) => p.name === profile.name);
       if (!me) return { status: t.statWait[lang], color: '#f59e0b' };
-      if (me.role === 'driver') return { status: t.statSelf[lang], color: '#10b981' };
+      
+      if (me.role === 'driver') {
+        const passengers = data.filter((p: any) => p.role === 'rider' && p.carId === me.id);
+        const passengerNames = passengers.map((p: any) => p.name).join(', ') || (lang === 'ko' ? '없음' : 'None');
+        let timeStr = me.pickupTime ? (lang === 'ko' ? ` / 안내: ${me.pickupTime}` : ` / Info: ${me.pickupTime}`) : '';
+        return { status: lang === 'ko' ? `본인 차량 (탑승: ${passengerNames}${timeStr})` : `Self (Riders: ${passengerNames}${timeStr})`, color: '#10b981' };
+      }
+      
       if (me.carId) {
         const driver = data.find((p: any) => p.id === me.carId);
-        // 여기서부터 추가 및 변경된 부분
         let timeStr = '';
         if (driver && driver.pickupTime) {
-          timeStr = lang === 'ko' ? ` (픽업: ${driver.pickupTime})` : ` (Pickup: ${driver.pickupTime})`;
+          timeStr = lang === 'ko' ? ` (안내: ${driver.pickupTime})` : ` (Info: ${driver.pickupTime})`;
         }
         return driver ? { status: lang === 'ko' ? `${driver.name}님 차량 탑승${timeStr}` : `Riding with ${driver.name}${timeStr}`, color: '#3b82f6' } : { status: t.statDone[lang], color: '#3b82f6' };
       }
@@ -285,7 +323,7 @@ export default function Home() {
         let role: 'driver' | 'rider' = rideType.includes('운전') ? 'driver' : 'rider';
         let id = role === 'driver' ? `reg_driver_${idx}` : `reg_rider_${idx}`;
         
-        attendeeMap.set(name, { id, name, role, capacity, carId: role === 'driver' ? id : null, address });
+        attendeeMap.set(name, { id, name, role, capacity, carId: role === 'driver' ? id : null, address, pickupTime: '' });
       });
     }
 
@@ -314,7 +352,7 @@ export default function Home() {
           let role: 'driver' | 'rider' = rideType.includes('운전 가능') ? 'driver' : 'rider';
           let id = role === 'driver' ? `form_driver_${idx}` : `form_rider_${idx}`;
           
-          attendeeMap.set(name, { id, name, role, capacity, carId: role === 'driver' ? id : null, address });
+          attendeeMap.set(name, { id, name, role, capacity, carId: role === 'driver' ? id : null, address, pickupTime: '' });
         }
       }
     });
@@ -326,7 +364,9 @@ export default function Home() {
         parsedData.forEach((savedPerson: Person) => {
           if (attendeeMap.has(savedPerson.name)) {
             const currentPerson = attendeeMap.get(savedPerson.name)!;
-            if (currentPerson.role !== 'driver') {
+            if (currentPerson.role === 'driver') {
+              currentPerson.pickupTime = savedPerson.pickupTime || '';
+            } else {
               currentPerson.carId = savedPerson.carId;
             }
           }
@@ -380,10 +420,33 @@ export default function Home() {
       const isFull = passengers.length >= (driver.capacity || 0);
       const statusTxt = isFull ? t.full[lang] : (lang === 'ko' ? `${driver.capacity! - passengers.length}자리 남음` : `${driver.capacity! - passengers.length} seats left`);
       const riderTxt = passengers.map(p => p.name).join(', ') || (lang === 'ko' ? '빈 차' : 'Empty');
-      const timeTxt = driver.pickupTime ? (lang === 'ko' ? ` [픽업: ${driver.pickupTime}]` : ` [Pickup: ${driver.pickupTime}]`) : '';
+      const timeTxt = driver.pickupTime ? (lang === 'ko' ? ` [안내: ${driver.pickupTime}]` : ` [Info: ${driver.pickupTime}]`) : '';
       text += `${t.car[lang]} ${driver.name} (${statusTxt})${timeTxt}\n - ${lang === 'ko' ? '탑승' : 'Riders'}: ${riderTxt}\n\n`;
     });
     text += `[${t.waitlist[lang]}]\n - ${unassignedRiders.length > 0 ? unassignedRiders.map(p => p.name).join(', ') : (lang === 'ko' ? '없음' : 'None')}\n`;
+    navigator.clipboard.writeText(text).then(() => showToast(t.copyOk[lang], 'success'));
+  };
+
+  // [기능 추가 3] 개별 차량 명단 복사 기능
+  const copyIndividualCar = (e: React.MouseEvent, driverId: string) => {
+    e.stopPropagation();
+    const driver = people.find(p => p.id === driverId);
+    if (!driver) return;
+    const passengers = people.filter(p => p.role === 'rider' && p.carId === driverId);
+    
+    let text = lang === 'ko' ? `[차량] ${driver.name}\n` : `[Car] ${driver.name}\n`;
+    if (driver.pickupTime) {
+      text += lang === 'ko' ? `- 픽업 안내: ${driver.pickupTime}\n` : `- Pickup Info: ${driver.pickupTime}\n`;
+    }
+    if (passengers.length > 0) {
+      text += lang === 'ko' ? `- 탑승자:\n` : `- Riders:\n`;
+      passengers.forEach(p => {
+        text += `  • ${p.name} (${p.address || '주소 없음'})\n`;
+      });
+    } else {
+      text += lang === 'ko' ? `- 탑승자: 배정 인원 없음\n` : `- Riders: Empty\n`;
+    }
+    
     navigator.clipboard.writeText(text).then(() => showToast(t.copyOk[lang], 'success'));
   };
 
@@ -596,6 +659,8 @@ export default function Home() {
                 <h3 style={{ fontSize: '16px', color: '#3f3f46', marginBottom: '10px', marginLeft: '5px', fontWeight: 'bold' }}>{t.schedTitle[lang]}</h3>
                 {selectedEvents.length > 0 ? selectedEvents.map(event => {
                   const myStatus = getMyRideStatus(event.fullName);
+                  const isApplied = checkApplicationStatus(event.fullName, event.type);
+                  
                   return (
                     <div key={event.id} style={{ background: '#fff', padding: '20px', borderRadius: '16px', border: '1px solid #e4e4e7', marginBottom: '10px', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -609,14 +674,16 @@ export default function Home() {
                       {myStatus && (
                         <div style={{ padding: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 'bold' }}>{t.myStat[lang]}</span>
-                          <span style={{ fontSize: '14px', color: myStatus.color, fontWeight: '900' }}>{myStatus.status}</span>
+                          <span style={{ fontSize: '13px', color: myStatus.color, fontWeight: '900', wordBreak: 'keep-all', lineHeight: '1.4' }}>{myStatus.status}</span>
                         </div>
                       )}
                       
                       {isProfileSaved ? (
                         <div style={{ display: 'flex', gap: '10px' }}>
-                          <button className="hover-btn" onClick={() => window.open(getPrefilledUrl(event.fullName, false), '_blank')} style={{ flex: 1, padding: '12px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer' }}>{t.btnApply1[lang]}</button>
-                          <button className="hover-btn" onClick={() => window.open(getPrefilledUrl(event.fullName, true), '_blank')} style={{ flex: 1, padding: '12px', background: '#f4f4f5', color: '#ef4444', border: '1px solid #fecaca', borderRadius: '8px', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer' }}>{t.btnCancel[lang]}</button>
+                          <button className="hover-btn" onClick={() => window.open(getPrefilledUrl(event.fullName, false), '_blank')} style={{ flex: 1, padding: '12px', background: isApplied ? '#10b981' : '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}>
+                            {isApplied ? t.alreadyApplied[lang] : t.btnApply1[lang]}
+                          </button>
+                          <button className="hover-btn" onClick={() => window.open(getPrefilledUrl(event.fullName, true), '_blank')} style={{ flex: 1, padding: '12px', background: '#f4f4f5', color: '#ef4444', border: '1px solid #fecaca', borderRadius: '8px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}>{t.btnCancel[lang]}</button>
                         </div>
                       ) : (
                         <button className="hover-btn" onClick={() => window.open(getPrefilledUrl(event.fullName, false), '_blank')} style={{ width: '100%', padding: '14px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: 'bold', cursor: 'pointer' }}>{t.btnApplyM[lang]}</button>
@@ -711,13 +778,19 @@ export default function Home() {
                     return (
                       <div key={driver.id} className={`drop-zone ${dragOverCarId === driver.id ? 'drop-zone-active' : ''} ${selectedRider && !isFull ? 'highlight-drop' : ''}`} onClick={() => !isFull && assignToCar(driver.id)} onDragOver={(e) => { e.preventDefault(); !isFull && setDragOverCarId(driver.id); }} onDragLeave={() => setDragOverCarId(null)} onDrop={(e) => handleDrop(e, driver.id)} style={{ background: '#ffffff', padding: '20px', borderRadius: '16px', border: isFull ? '2px solid #fecaca' : '1px solid #e4e4e7', position: 'relative', cursor: isFull ? 'not-allowed' : 'pointer', overflow: 'hidden' }}>
                         {isFull && <div style={{ position: 'absolute', right: '-25px', top: '15px', background: '#ef4444', color: '#fff', fontSize: '11px', fontWeight: 'bold', padding: '4px 30px', transform: 'rotate(45deg)', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t.full[lang]}</div>}
+                        
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span style={{ fontWeight: '900', color: '#18181b', fontSize: '16px' }}>{t.car[lang]} {driver.name}</span>
                             <span style={{ fontSize: '12px', background: isFull ? '#fee2e2' : '#dcfce7', color: isFull ? '#dc2626' : '#166534', padding: '3px 8px', borderRadius: '10px', fontWeight: 'bold' }}>{passengers.length} / {driver.capacity}</span>
                           </div>
-                          <button className="hover-btn" onClick={(e) => { e.stopPropagation(); openRouteMap(driver.id); }} style={{ padding: '8px 12px', background: '#18181b', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>{t.navi[lang]}</button>
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button className="hover-btn" onClick={(e) => copyIndividualCar(e, driver.id)} style={{ padding: '6px 10px', background: '#fef01b', color: '#3f2020', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>{t.indivCopy[lang]}</button>
+                            <button className="hover-btn" onClick={(e) => { e.stopPropagation(); openRouteMap(driver.id); }} style={{ padding: '6px 10px', background: '#18181b', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>{t.navi[lang]}</button>
+                          </div>
                         </div>
+
+                        {/* 자유 텍스트 입력 픽업 안내 */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px', background: '#f4f4f5', padding: '8px 12px', borderRadius: '8px' }}>
                           <span style={{ fontSize: '13px', color: '#3f3f46', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
                             {lang === 'ko' ? '픽업 안내:' : 'Pickup Info:'}
@@ -734,6 +807,7 @@ export default function Home() {
                             style={{ flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid #d4d4d8', fontSize: '14px', background: '#fff' }}
                           />
                         </div>
+
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', minHeight: '45px', background: '#f8fafc', padding: '12px', borderRadius: '10px', border: '1px inset #f1f5f9' }}>
                           {passengers.map(rider => (
                             <button className="hover-btn" key={rider.id} draggable onDragStart={(e) => handleDragStart(e, rider.id)} onDragEnd={() => setSelectedRider(null)} onClick={(e) => { e.stopPropagation(); setSelectedRider(selectedRider === rider.id ? null : rider.id); }} style={{ padding: '6px 12px', borderRadius: '20px', border: '1px solid #cbd5e1', background: selectedRider === rider.id ? '#3b82f6' : '#ffffff', color: selectedRider === rider.id ? '#fff' : '#334155', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: '6px' }}>
