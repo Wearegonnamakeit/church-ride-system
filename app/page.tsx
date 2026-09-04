@@ -369,9 +369,37 @@ export default function Home() {
     const currentEventObj = events.find(e => e.fullName === adminSelectedEvent);
     const isRegular = currentEventObj?.type === 'regular';
 
+    // --- 💡 [기능 추가] 요일별 밴 기본 안내 메모 설정 ---
+    let defaultVanTo = '';
+    let defaultVanFrom = '';
+
+    if (currentEventObj && currentEventObj.date) {
+      // 날짜 에러 방지를 위해 년-월-일 분리 계산
+      const [y, m, d] = currentEventObj.date.split('-').map(Number);
+      const eventDate = new Date(y, m - 1, d);
+      const dayOfWeek = eventDate.getDay(); // 0: 일요일, 5: 금요일
+
+      if (dayOfWeek === 5) { // 금요일 예배
+        defaultVanTo = 'MU 옆 써클';
+        defaultVanFrom = ''; // 비워두면 기존의 회색 placeholder (예: 10:30...)가 보입니다.
+      } else if (dayOfWeek === 0) { // 일요일(주일) 예배
+        defaultVanTo = 'Chazen 앞';
+        defaultVanFrom = 'Chazen 앞';
+      }
+    }
+    // --------------------------------------------------
+
     const attendeeMap = new Map<string, Person>();
 
-    attendeeMap.set('van_1', { id: 'van_1', name: '밴', role: 'driver', capacity: 14, capacityTo: 14, capacityFrom: 14, carIdTo: null, carIdFrom: null, address: '', pickupTimeTo: '', pickupTimeFrom: '[일괄 하차] Chazen 앞', carId: null, isVan: true, vanDriverIdTo: null, vanDriverIdFrom: null });
+    // 밴 초기 세팅에 계산된 요일별 메모(defaultVanTo, defaultVanFrom) 적용
+    attendeeMap.set('van_1', { 
+      id: 'van_1', name: '교회 밴', role: 'driver', 
+      capacity: 14, capacityTo: 14, capacityFrom: 14, 
+      carIdTo: null, carIdFrom: null, address: '', 
+      pickupTimeTo: defaultVanTo, 
+      pickupTimeFrom: defaultVanFrom, 
+      isVan: true, vanDriverIdTo: null, vanDriverIdFrom: null, carId: null 
+    });
 
     if (isRegular && regularAttendees.length > 0) {
       regularAttendees.forEach((row, idx) => {
@@ -381,10 +409,8 @@ export default function Home() {
         const rideType = row['이동 수단'] || '';
         const capacityStr = String(row['정원'] || '').replace(/[^0-9]/g, '');
         const capacity = capacityStr ? parseInt(capacityStr, 10) : 4;
-        
         let role: 'driver' | 'rider' = rideType.includes('운전') ? 'driver' : 'rider';
         let id = role === 'driver' ? `reg_driver_${idx}` : `reg_rider_${idx}`;
-        
         attendeeMap.set(name, { id, name, role, capacity, capacityTo: capacity, capacityFrom: capacity, carIdTo: null, carIdFrom: null, address, pickupTimeTo: '', pickupTimeFrom: '', carId: null });
       });
     }
@@ -395,23 +421,16 @@ export default function Home() {
         const nameKey = Object.keys(row).find(key => key.includes('이름')) || '';
         const name = row[nameKey];
         if (!name) return;
-
         const attendanceStatus = String(row['참석 여부 (Attendance or not)'] || row['참석 여부'] || '');
-        if (attendanceStatus.includes('불참')) {
-          attendeeMap.delete(name); 
-        } else if (attendanceStatus.includes('참석')) {
+        if (attendanceStatus.includes('불참')) attendeeMap.delete(name);
+        else if (attendanceStatus.includes('참석')) {
           const addressKey = Object.keys(row).find(key => key.includes('주소') || key.includes('Address')) || '';
-          const address = addressKey ? row[addressKey] : '';
           const rideTypeKey = Object.keys(row).find(key => key.includes('이동 수단') || key.includes('수단') || key.includes('Ride Information')) || '';
-          const rideType = rideTypeKey ? String(row[rideTypeKey]) : '';
           const capacityKey = Object.keys(row).find(key => key.includes('정원') || key.includes('Capacity')) || '';
-          const capacityStr = capacityKey ? String(row[capacityKey]).replace(/[^0-9]/g, '') : '';
-          const capacity = capacityStr ? parseInt(capacityStr, 10) : 4;
-
-          let role: 'driver' | 'rider' = rideType.includes('운전 가능') ? 'driver' : 'rider';
+          const capacity = capacityKey ? parseInt(String(row[capacityKey]).replace(/[^0-9]/g, ''), 10) : 4;
+          let role: 'driver' | 'rider' = String(row[rideTypeKey]).includes('운전 가능') ? 'driver' : 'rider';
           let id = role === 'driver' ? `form_driver_${idx}` : `form_rider_${idx}`;
-          
-          attendeeMap.set(name, { id, name, role, capacity, capacityTo: capacity, capacityFrom: capacity, carIdTo: null, carIdFrom: null, address, pickupTimeTo: '', pickupTimeFrom: '', carId: null });
+          attendeeMap.set(name, { id, name, role, capacity: capacity || 4, capacityTo: capacity || 4, capacityFrom: capacity || 4, carIdTo: null, carIdFrom: null, address: row[addressKey] || '', pickupTimeTo: '', pickupTimeFrom: '', carId: null });
         }
       }
     });
@@ -420,7 +439,7 @@ export default function Home() {
     if (savedRow && savedRow['데이터']) {
       try {
         const parsedData = JSON.parse(savedRow['데이터']);
-        parsedData.forEach((savedPerson: any) => { 
+        parsedData.forEach((savedPerson: any) => {
           if (attendeeMap.has(savedPerson.name) || savedPerson.isVan) {
             let currentPerson = attendeeMap.get(savedPerson.name);
             if (!currentPerson && savedPerson.isVan) {
@@ -429,12 +448,12 @@ export default function Home() {
             }
             if (currentPerson) {
               if (currentPerson.role === 'driver' || currentPerson.isVan) {
-                currentPerson.pickupTimeTo = savedPerson.pickupTimeTo || savedPerson.pickupTime || '';
-                currentPerson.pickupTimeFrom = savedPerson.pickupTimeFrom || savedPerson.pickupTime || '';
+                // 이미 한 번 '저장' 버튼을 눌러서 덮어쓴 기록이 있다면 그 메모를 우선으로 가져옴
+                currentPerson.pickupTimeTo = savedPerson.pickupTimeTo !== undefined ? savedPerson.pickupTimeTo : (savedPerson.pickupTime || currentPerson.pickupTimeTo);
+                currentPerson.pickupTimeFrom = savedPerson.pickupTimeFrom !== undefined ? savedPerson.pickupTimeFrom : (savedPerson.pickupTime || currentPerson.pickupTimeFrom);
                 
                 currentPerson.capacityTo = savedPerson.capacityTo !== undefined ? savedPerson.capacityTo : (savedPerson.capacity !== undefined ? savedPerson.capacity : currentPerson.capacityTo);
                 currentPerson.capacityFrom = savedPerson.capacityFrom !== undefined ? savedPerson.capacityFrom : (savedPerson.capacity !== undefined ? savedPerson.capacity : currentPerson.capacityFrom);
-                
                 if (currentPerson.isVan) {
                   currentPerson.vanDriverIdTo = savedPerson.vanDriverIdTo;
                   currentPerson.vanDriverIdFrom = savedPerson.vanDriverIdFrom;
@@ -448,7 +467,6 @@ export default function Home() {
         });
       } catch (e) { console.error(e); }
     }
-
     setPeople(Array.from(attendeeMap.values()));
   }, [adminSelectedEvent, rawResponses, savedAssignments, regularAttendees, events]);
 
