@@ -970,7 +970,7 @@ export default function Home() {
                                 onDrop={(e) => { e.stopPropagation(); handleDrop(e, 'van_driver_slot'); }}
                                 style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '6px 12px', border: dragOverCarId === 'van_driver_slot' ? '2px dashed #10b981' : '1px dashed #d4d4d8', borderRadius: '8px', background: dragOverCarId === 'van_driver_slot' ? '#ecfdf5' : '#f8fafc', minHeight: '36px', cursor: 'pointer', overflow: 'hidden' }}
                               >
-                                <span style={{ fontWeight: '900', color: '#18181b', fontSize: '15px', marginRight: '8px', whiteSpace: 'nowrap' }}>🚐 {lang === 'ko' ? '교회 밴' : 'Church Van'}</span>
+                                <span style={{ fontWeight: '900', color: '#18181b', fontSize: '15px', marginRight: '8px', whiteSpace: 'nowrap' }}>{lang === 'ko' ? '교회 밴' : 'Church Van'}</span>
                                 {(() => {
                                   const vanDrvId = rideDirection === 'to' ? driver.vanDriverIdTo : driver.vanDriverIdFrom;
                                   const vanDriverPerson = people.find(p => p.id === vanDrvId);
