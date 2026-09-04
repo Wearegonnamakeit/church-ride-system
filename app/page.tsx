@@ -9,10 +9,16 @@ interface ChurchEvent {
 }
 
 interface Person {
-  id: string; name: string; role: 'driver' | 'rider';
+  id: string; 
+  name: string; 
+  role: 'driver' | 'rider';
   carIdTo: string | null; 
   carIdFrom: string | null;
-  capacity?: number; address?: string; 
+  carId?: string | null;
+  capacity?: number;
+  capacityTo?: number;
+  capacityFrom?: number;
+  address?: string; 
   pickupTimeTo?: string; 
   pickupTimeFrom?: string; 
   pickupTime?: string; 
@@ -86,7 +92,7 @@ const t = {
   noDrv: { ko: '아직 신청한 운전자가 없습니다.', en: 'No drivers have applied yet.' },
   admDesc1: { ko: '위 목록에서 행사를 선택하시면', en: 'Select an event from the list above' },
   admDesc2: { ko: '배정 화면이 나타납니다.', en: 'to view the assignment screen.' },
-  vanNoDriverTo: { ko: '운전자를 이곳으로 드래그', en: 'Drag driver here' },
+  vanNoDriverTo: { ko: '운전자 배정 (대기석에서 드래그)', en: 'Drag from waitlist (Driver)' },
   tab1: { ko: '[ 달력 및 신청 ]', en: '[ Calendar ]' },
   tab2: { ko: '[ 내 정보 설정 ]', en: '[ Profile ]' },
   tab3: { ko: '[ 배정 관리 ]', en: '[ Admin ]' },
@@ -365,7 +371,7 @@ export default function Home() {
 
     const attendeeMap = new Map<string, Person>();
 
-    attendeeMap.set('van_1', { id: 'van_1', name: '교회 밴', role: 'driver', capacity: 14, carIdTo: null, carIdFrom: null, address: '', pickupTimeTo: '', pickupTimeFrom: '[일괄 하차] 정해진 장소', isVan: true, vanDriverIdTo: null, vanDriverIdFrom: null, carId: null });
+    attendeeMap.set('van_1', { id: 'van_1', name: '교회 밴', role: 'driver', capacity: 14, capacityTo: 14, capacityFrom: 14, carIdTo: null, carIdFrom: null, address: '', pickupTimeTo: '', pickupTimeFrom: '[일괄 하차] 정해진 장소', carId: null, isVan: true, vanDriverIdTo: null, vanDriverIdFrom: null });
 
     if (isRegular && regularAttendees.length > 0) {
       regularAttendees.forEach((row, idx) => {
@@ -375,9 +381,11 @@ export default function Home() {
         const rideType = row['이동 수단'] || '';
         const capacityStr = String(row['정원'] || '').replace(/[^0-9]/g, '');
         const capacity = capacityStr ? parseInt(capacityStr, 10) : 4;
+        
         let role: 'driver' | 'rider' = rideType.includes('운전') ? 'driver' : 'rider';
         let id = role === 'driver' ? `reg_driver_${idx}` : `reg_rider_${idx}`;
-        attendeeMap.set(name, { id, name, role, capacity, carIdTo: null, carIdFrom: null, address, pickupTimeTo: '', pickupTimeFrom: '', carId: null });
+        
+        attendeeMap.set(name, { id, name, role, capacity, capacityTo: capacity, capacityFrom: capacity, carIdTo: null, carIdFrom: null, address, pickupTimeTo: '', pickupTimeFrom: '', carId: null });
       });
     }
 
@@ -387,16 +395,23 @@ export default function Home() {
         const nameKey = Object.keys(row).find(key => key.includes('이름')) || '';
         const name = row[nameKey];
         if (!name) return;
+
         const attendanceStatus = String(row['참석 여부 (Attendance or not)'] || row['참석 여부'] || '');
-        if (attendanceStatus.includes('불참')) attendeeMap.delete(name);
-        else if (attendanceStatus.includes('참석')) {
+        if (attendanceStatus.includes('불참')) {
+          attendeeMap.delete(name); 
+        } else if (attendanceStatus.includes('참석')) {
           const addressKey = Object.keys(row).find(key => key.includes('주소') || key.includes('Address')) || '';
+          const address = addressKey ? row[addressKey] : '';
           const rideTypeKey = Object.keys(row).find(key => key.includes('이동 수단') || key.includes('수단') || key.includes('Ride Information')) || '';
+          const rideType = rideTypeKey ? String(row[rideTypeKey]) : '';
           const capacityKey = Object.keys(row).find(key => key.includes('정원') || key.includes('Capacity')) || '';
-          const capacity = capacityKey ? parseInt(String(row[capacityKey]).replace(/[^0-9]/g, ''), 10) : 4;
-          let role: 'driver' | 'rider' = String(row[rideTypeKey]).includes('운전 가능') ? 'driver' : 'rider';
+          const capacityStr = capacityKey ? String(row[capacityKey]).replace(/[^0-9]/g, '') : '';
+          const capacity = capacityStr ? parseInt(capacityStr, 10) : 4;
+
+          let role: 'driver' | 'rider' = rideType.includes('운전 가능') ? 'driver' : 'rider';
           let id = role === 'driver' ? `form_driver_${idx}` : `form_rider_${idx}`;
-          attendeeMap.set(name, { id, name, role, capacity: capacity || 4, carIdTo: null, carIdFrom: null, address: row[addressKey] || '', pickupTimeTo: '', pickupTimeFrom: '', carId: null });
+          
+          attendeeMap.set(name, { id, name, role, capacity, capacityTo: capacity, capacityFrom: capacity, carIdTo: null, carIdFrom: null, address, pickupTimeTo: '', pickupTimeFrom: '', carId: null });
         }
       }
     });
@@ -405,7 +420,7 @@ export default function Home() {
     if (savedRow && savedRow['데이터']) {
       try {
         const parsedData = JSON.parse(savedRow['데이터']);
-        parsedData.forEach((savedPerson: Person) => {
+        parsedData.forEach((savedPerson: any) => { 
           if (attendeeMap.has(savedPerson.name) || savedPerson.isVan) {
             let currentPerson = attendeeMap.get(savedPerson.name);
             if (!currentPerson && savedPerson.isVan) {
@@ -416,20 +431,24 @@ export default function Home() {
               if (currentPerson.role === 'driver' || currentPerson.isVan) {
                 currentPerson.pickupTimeTo = savedPerson.pickupTimeTo || savedPerson.pickupTime || '';
                 currentPerson.pickupTimeFrom = savedPerson.pickupTimeFrom || savedPerson.pickupTime || '';
-                currentPerson.capacity = savedPerson.capacity !== undefined ? savedPerson.capacity : currentPerson.capacity;
+                
+                currentPerson.capacityTo = savedPerson.capacityTo !== undefined ? savedPerson.capacityTo : (savedPerson.capacity !== undefined ? savedPerson.capacity : currentPerson.capacityTo);
+                currentPerson.capacityFrom = savedPerson.capacityFrom !== undefined ? savedPerson.capacityFrom : (savedPerson.capacity !== undefined ? savedPerson.capacity : currentPerson.capacityFrom);
+                
                 if (currentPerson.isVan) {
                   currentPerson.vanDriverIdTo = savedPerson.vanDriverIdTo;
                   currentPerson.vanDriverIdFrom = savedPerson.vanDriverIdFrom;
                 }
               } else {
-                currentPerson.carIdTo = savedPerson.carIdTo !== undefined ? savedPerson.carIdTo : savedPerson.carId;
-                currentPerson.carIdFrom = savedPerson.carIdFrom !== undefined ? savedPerson.carIdFrom : savedPerson.carId;
+                currentPerson.carIdTo = savedPerson.carIdTo !== undefined ? savedPerson.carIdTo : (savedPerson.carId !== undefined ? savedPerson.carId : null);
+                currentPerson.carIdFrom = savedPerson.carIdFrom !== undefined ? savedPerson.carIdFrom : (savedPerson.carId !== undefined ? savedPerson.carId : null);
               }
             }
           }
         });
       } catch (e) { console.error(e); }
     }
+
     setPeople(Array.from(attendeeMap.values()));
   }, [adminSelectedEvent, rawResponses, savedAssignments, regularAttendees, events]);
 
@@ -440,9 +459,10 @@ export default function Home() {
 
     if (carId === 'van_driver_slot') {
       setPeople(prev => prev.map(p => {
-        if (p.isVan) return { ...p, [rideDirection === 'to' ? 'vanDriverIdTo' : 'vanDriverIdFrom']: rider.id };
-        if (p.id === rider.id && p.role === 'rider') return { ...p, [rideDirection === 'to' ? 'carIdTo' : 'carIdFrom']: null };
-        return p;
+        let updated = p;
+        if (p.isVan) updated = { ...updated, [rideDirection === 'to' ? 'vanDriverIdTo' : 'vanDriverIdFrom']: rider.id };
+        if (p.id === rider.id && p.role === 'rider') updated = { ...updated, [rideDirection === 'to' ? 'carIdTo' : 'carIdFrom']: null };
+        return updated;
       }));
     } else if (carId !== null) {
       if (rider.role === 'driver') {
@@ -450,15 +470,24 @@ export default function Home() {
         setSelectedRider(null);
         return;
       }
-      setPeople(prev => prev.map(p => p.id === selectedRider ? { ...p, [rideDirection === 'to' ? 'carIdTo' : 'carIdFrom']: carId } : p));
+      setPeople(prev => prev.map(p => {
+        let updated = p;
+        if (p.id === selectedRider) updated = { ...updated, [rideDirection === 'to' ? 'carIdTo' : 'carIdFrom']: carId };
+        if (p.isVan) {
+          if (rideDirection === 'to' && p.vanDriverIdTo === selectedRider) updated = { ...updated, vanDriverIdTo: null };
+          if (rideDirection === 'from' && p.vanDriverIdFrom === selectedRider) updated = { ...updated, vanDriverIdFrom: null };
+        }
+        return updated;
+      }));
     } else {
       setPeople(prev => prev.map(p => {
-        if (p.id === selectedRider) return { ...p, [rideDirection === 'to' ? 'carIdTo' : 'carIdFrom']: null };
-        if (p.isVan && rider.role === 'driver') {
-          if (rideDirection === 'to' && p.vanDriverIdTo === selectedRider) return { ...p, vanDriverIdTo: null };
-          if (rideDirection === 'from' && p.vanDriverIdFrom === selectedRider) return { ...p, vanDriverIdFrom: null };
+        let updated = p;
+        if (p.id === selectedRider) updated = { ...updated, [rideDirection === 'to' ? 'carIdTo' : 'carIdFrom']: null };
+        if (p.isVan) {
+          if (rideDirection === 'to' && p.vanDriverIdTo === selectedRider) updated = { ...updated, vanDriverIdTo: null };
+          if (rideDirection === 'from' && p.vanDriverIdFrom === selectedRider) updated = { ...updated, vanDriverIdFrom: null };
         }
-        return p;
+        return updated;
       }));
     }
     setSelectedRider(null); 
@@ -475,9 +504,10 @@ export default function Home() {
 
     if (carId === 'van_driver_slot') {
       setPeople(prev => prev.map(p => {
-        if (p.isVan) return { ...p, [rideDirection === 'to' ? 'vanDriverIdTo' : 'vanDriverIdFrom']: rider.id };
-        if (p.id === rider.id && p.role === 'rider') return { ...p, [rideDirection === 'to' ? 'carIdTo' : 'carIdFrom']: null };
-        return p;
+        let updated = p;
+        if (p.isVan) updated = { ...updated, [rideDirection === 'to' ? 'vanDriverIdTo' : 'vanDriverIdFrom']: rider.id };
+        if (p.id === rider.id && p.role === 'rider') updated = { ...updated, [rideDirection === 'to' ? 'carIdTo' : 'carIdFrom']: null };
+        return updated;
       }));
     } else if (carId !== null) {
       if (rider.role === 'driver') {
@@ -487,16 +517,27 @@ export default function Home() {
       }
       const driver = people.find(p => p.id === carId);
       const passengers = people.filter(p => p.role === 'rider' && (rideDirection === 'to' ? p.carIdTo === carId : p.carIdFrom === carId));
-      if (driver && passengers.length >= (driver.capacity || 0)) { showToast(t.fullCar[lang], 'error'); setSelectedRider(null); return; }
-      setPeople(prev => prev.map(p => p.id === riderId ? { ...p, [rideDirection === 'to' ? 'carIdTo' : 'carIdFrom']: carId } : p));
+      const currentCapacity = rideDirection === 'to' ? (driver?.capacityTo || 0) : (driver?.capacityFrom || 0);
+      if (driver && passengers.length >= currentCapacity) { showToast(t.fullCar[lang], 'error'); setSelectedRider(null); return; }
+      
+      setPeople(prev => prev.map(p => {
+        let updated = p;
+        if (p.id === riderId) updated = { ...updated, [rideDirection === 'to' ? 'carIdTo' : 'carIdFrom']: carId };
+        if (p.isVan) {
+          if (rideDirection === 'to' && p.vanDriverIdTo === riderId) updated = { ...updated, vanDriverIdTo: null };
+          if (rideDirection === 'from' && p.vanDriverIdFrom === riderId) updated = { ...updated, vanDriverIdFrom: null };
+        }
+        return updated;
+      }));
     } else {
       setPeople(prev => prev.map(p => {
-        if (p.id === riderId) return { ...p, [rideDirection === 'to' ? 'carIdTo' : 'carIdFrom']: null };
-        if (p.isVan && rider.role === 'driver') {
-          if (rideDirection === 'to' && p.vanDriverIdTo === riderId) return { ...p, vanDriverIdTo: null };
-          if (rideDirection === 'from' && p.vanDriverIdFrom === riderId) return { ...p, vanDriverIdFrom: null };
+        let updated = p;
+        if (p.id === riderId) updated = { ...updated, [rideDirection === 'to' ? 'carIdTo' : 'carIdFrom']: null };
+        if (p.isVan) {
+          if (rideDirection === 'to' && p.vanDriverIdTo === riderId) updated = { ...updated, vanDriverIdTo: null };
+          if (rideDirection === 'from' && p.vanDriverIdFrom === riderId) updated = { ...updated, vanDriverIdFrom: null };
         }
-        return p;
+        return updated;
       }));
     }
     setSelectedRider(null);
@@ -525,13 +566,27 @@ export default function Home() {
 
   const copyToKakao = () => {
     const driversList = people.filter(p => p.role === 'driver');
-    const unassignedRiders = people.filter(p => p.role === 'rider' && (rideDirection === 'to' ? !p.carIdTo : !p.carIdFrom));
+    const unassignedRiders = people.filter(p => {
+      if (p.role !== 'rider') return false;
+      const van = people.find(v => v.isVan);
+      if (rideDirection === 'to') {
+        if (p.carIdTo) return false;
+        if (van && van.vanDriverIdTo === p.id) return false;
+        return true;
+      } else {
+        if (p.carIdFrom) return false;
+        if (van && van.vanDriverIdFrom === p.id) return false;
+        return true;
+      }
+    });
+
     let text = lang === 'ko' ? `[${adminSelectedEvent} - ${rideDirection === 'to' ? '가는 편' : '오는 편'}]\n\n` : `[${adminSelectedEvent} - ${rideDirection === 'to' ? 'To Event' : 'From Event'}]\n\n`;
     
     driversList.forEach(driver => {
       const passengers = people.filter(p => p.role === 'rider' && (rideDirection === 'to' ? p.carIdTo === driver.id : p.carIdFrom === driver.id));
-      const isFull = passengers.length >= (driver.capacity || 0);
-      const statusTxt = isFull ? t.full[lang] : (lang === 'ko' ? `${driver.capacity! - passengers.length}자리 남음` : `${driver.capacity! - passengers.length} seats left`);
+      const currentCapacity = rideDirection === 'to' ? (driver.capacityTo || 0) : (driver.capacityFrom || 0);
+      const isFull = passengers.length >= currentCapacity;
+      const statusTxt = isFull ? t.full[lang] : (lang === 'ko' ? `${currentCapacity - passengers.length}자리 남음` : `${currentCapacity - passengers.length} seats left`);
       const riderTxt = passengers.map(p => p.name).join(', ') || (lang === 'ko' ? '빈 차' : 'Empty');
       const timeStr = rideDirection === 'to' ? driver.pickupTimeTo : driver.pickupTimeFrom;
       const timeTxt = timeStr ? (lang === 'ko' ? ` [안내: ${timeStr}]` : ` [Info: ${timeStr}]`) : '';
@@ -594,15 +649,31 @@ export default function Home() {
   const blanks = Array.from({ length: new Date(year, month, 1).getDay() }, (_, i) => i);
   const days = Array.from({ length: new Date(year, month + 1, 0).getDate() }, (_, i) => i + 1);
   const selectedEvents = events.filter(e => e.date === selectedDate);
-  const unassignedRiders = people.filter(p => p.role === 'rider' && (rideDirection === 'to' ? !p.carIdTo : !p.carIdFrom));
+  
+  const unassignedRiders = people.filter(p => {
+    if (p.role !== 'rider') return false;
+    const van = people.find(v => v.isVan);
+    if (rideDirection === 'to') {
+      if (p.carIdTo) return false;
+      if (van && van.vanDriverIdTo === p.id) return false;
+      return true;
+    } else {
+      if (p.carIdFrom) return false;
+      if (van && van.vanDriverIdFrom === p.id) return false;
+      return true;
+    }
+  });
+
   const driversList = people.filter(p => p.role === 'driver');
   const uniqueEvents = Array.from(new Set(events.map(e => e.fullName)));
+  
   const weekDaysKo = ['일', '월', '화', '수', '목', '금', '토'];
   const weekDaysEn = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const weekDays = lang === 'ko' ? weekDaysKo : weekDaysEn;
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
   const totalRiders = people.filter(p => p.role === 'rider').length;
-  const totalCapacity = driversList.reduce((acc, d) => acc + (d.capacity || 0), 0);
+  const totalCapacity = driversList.reduce((acc, d) => acc + (rideDirection === 'to' ? (d.capacityTo || 0) : (d.capacityFrom || 0)), 0);
   const isShortage = totalRiders > totalCapacity;
 
   if (isLoading) {
@@ -835,7 +906,8 @@ export default function Home() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                   {driversList.map(driver => {
                     const passengers = people.filter(p => p.role === 'rider' && (rideDirection === 'to' ? p.carIdTo === driver.id : p.carIdFrom === driver.id));
-                    const isFull = passengers.length >= (driver.capacity || 0);
+                    const currentCapacity = rideDirection === 'to' ? (driver.capacityTo || 0) : (driver.capacityFrom || 0);
+                    const isFull = passengers.length >= currentCapacity;
 
                     return (
                       <div key={driver.id} className={`drop-zone ${dragOverCarId === driver.id ? 'drop-zone-active' : ''} ${selectedRider && !isFull ? 'highlight-drop' : ''}`} onClick={() => !isFull && assignToCar(driver.id)} onDragOver={(e) => { e.preventDefault(); !isFull && setDragOverCarId(driver.id); }} onDragLeave={() => setDragOverCarId(null)} onDrop={(e) => handleDrop(e, driver.id)} style={{ background: '#ffffff', padding: '20px', borderRadius: '16px', border: isFull ? '2px solid #fecaca' : '1px solid #e4e4e7', position: 'relative', cursor: isFull ? 'not-allowed' : 'pointer', overflow: 'hidden' }}>
@@ -867,20 +939,15 @@ export default function Home() {
                               })()}
                             </div>
                           ) : (
-                            <div 
-                              draggable 
-                              onDragStart={(e) => handleDragStart(e, driver.id)}
-                              onClick={(e) => { e.stopPropagation(); setSelectedRider(selectedRider === driver.id ? null : driver.id); }}
-                              style={{ cursor: 'grab', display: 'flex', alignItems: 'center', gap: '8px', flex: 1, padding: '4px', borderRadius: '6px', background: selectedRider === driver.id ? '#e0e7ff' : 'transparent' }}
-                            >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, padding: '4px' }}>
                               <span style={{ fontWeight: '900', color: '#18181b', fontSize: '16px' }}>{t.car[lang]} {driver.name}</span>
                             </div>
                           )}
                           
                           <div style={{ display: 'flex', alignItems: 'center', background: isFull ? '#fee2e2' : '#dcfce7', borderRadius: '10px', overflow: 'hidden', border: `1px solid ${isFull ? '#fca5a5' : '#86efac'}` }} onClick={(e) => e.stopPropagation()}>
-                            <button onClick={() => setPeople(prev => prev.map(p => p.id === driver.id ? { ...p, capacity: Math.max(0, (p.capacity || 0) - 1) } : p))} style={{ border: 'none', background: 'transparent', padding: '4px 8px', color: isFull ? '#dc2626' : '#166534', fontWeight: 'bold', cursor: 'pointer' }}>-</button>
-                            <span style={{ fontSize: '13px', color: isFull ? '#dc2626' : '#166534', padding: '0 4px', fontWeight: 'bold' }}>{passengers.length} / {driver.capacity}</span>
-                            <button onClick={() => setPeople(prev => prev.map(p => p.id === driver.id ? { ...p, capacity: (p.capacity || 0) + 1 } : p))} style={{ border: 'none', background: 'transparent', padding: '4px 8px', color: isFull ? '#dc2626' : '#166534', fontWeight: 'bold', cursor: 'pointer' }}>+</button>
+                            <button onClick={() => setPeople(prev => prev.map(p => p.id === driver.id ? { ...p, [rideDirection === 'to' ? 'capacityTo' : 'capacityFrom']: Math.max(0, currentCapacity - 1) } : p))} style={{ border: 'none', background: 'transparent', padding: '4px 8px', color: isFull ? '#dc2626' : '#166534', fontWeight: 'bold', cursor: 'pointer' }}>-</button>
+                            <span style={{ fontSize: '13px', color: isFull ? '#dc2626' : '#166534', padding: '0 4px', fontWeight: 'bold' }}>{passengers.length} / {currentCapacity}</span>
+                            <button onClick={() => setPeople(prev => prev.map(p => p.id === driver.id ? { ...p, [rideDirection === 'to' ? 'capacityTo' : 'capacityFrom']: currentCapacity + 1 } : p))} style={{ border: 'none', background: 'transparent', padding: '4px 8px', color: isFull ? '#dc2626' : '#166534', fontWeight: 'bold', cursor: 'pointer' }}>+</button>
                           </div>
                           
                           <div style={{ display: 'flex', gap: '6px', marginLeft: '10px' }}>
