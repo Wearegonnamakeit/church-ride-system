@@ -709,8 +709,14 @@ export default function Home() {
   const weekDaysEn = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const weekDays = lang === 'ko' ? weekDaysKo : weekDaysEn;
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const totalRiders = people.filter(p => {
+    if (p.role !== 'rider') return false;
+    const van = people.find(v => v.isVan);
+    if (rideDirection === 'to' && van && van.vanDriverIdTo === p.id) return false;
+    if (rideDirection === 'from' && van && van.vanDriverIdFrom === p.id) return false;
+    return true;
+  }).length;
 
-  const totalRiders = people.filter(p => p.role === 'rider').length;
   const totalCapacity = driversList.reduce((acc, d) => acc + (rideDirection === 'to' ? (d.capacityTo || 0) : (d.capacityFrom || 0)), 0);
   const isShortage = totalRiders > totalCapacity;
 
