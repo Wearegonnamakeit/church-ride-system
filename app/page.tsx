@@ -419,7 +419,8 @@ export default function Home() {
 
         const address = row['주소'] || '';
         const rideType = row['이동 수단'] || '';
-        const capacityStr = String(row['정원'] || '').replace(/[^0-9]/g, '');
+        const capacityKey = Object.keys(row).find(key => key.includes('정원') || key.includes('인원') || key.includes('Capacity')) || '';
+        const capacityStr = capacityKey ? String(row[capacityKey]).replace(/[^0-9]/g, '') : '';
         const capacity = capacityStr ? parseInt(capacityStr, 10) : 4;
         
         let role: 'driver' | 'rider' = rideType.includes('운전') ? 'driver' : 'rider';
