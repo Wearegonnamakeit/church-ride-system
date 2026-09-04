@@ -371,7 +371,7 @@ export default function Home() {
 
     const attendeeMap = new Map<string, Person>();
 
-    attendeeMap.set('van_1', { id: 'van_1', name: '교회 밴', role: 'driver', capacity: 14, capacityTo: 14, capacityFrom: 14, carIdTo: null, carIdFrom: null, address: '', pickupTimeTo: '', pickupTimeFrom: '[일괄 하차] 정해진 장소', carId: null, isVan: true, vanDriverIdTo: null, vanDriverIdFrom: null });
+    attendeeMap.set('van_1', { id: 'van_1', name: '밴', role: 'driver', capacity: 14, capacityTo: 14, capacityFrom: 14, carIdTo: null, carIdFrom: null, address: '', pickupTimeTo: '', pickupTimeFrom: '[일괄 하차] Chazen 앞', carId: null, isVan: true, vanDriverIdTo: null, vanDriverIdFrom: null });
 
     if (isRegular && regularAttendees.length > 0) {
       regularAttendees.forEach((row, idx) => {
@@ -924,7 +924,7 @@ export default function Home() {
                               onDrop={(e) => handleDrop(e, 'van_driver_slot')}
                               style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '6px 12px', border: dragOverCarId === 'van_driver_slot' ? '2px dashed #10b981' : '1px dashed #d4d4d8', borderRadius: '8px', background: dragOverCarId === 'van_driver_slot' ? '#ecfdf5' : '#f8fafc', minHeight: '36px', cursor: 'pointer', marginRight: '10px' }}
                             >
-                              <span style={{ fontWeight: '900', color: '#18181b', fontSize: '15px', marginRight: '8px' }}>🚐 {lang === 'ko' ? '교회 밴' : 'Church Van'}</span>
+                              <span style={{ fontWeight: '900', color: '#18181b', fontSize: '15px', marginRight: '8px' }}>{lang === 'ko' ? '밴' : 'Church Van'}</span>
                               {(() => {
                                 const vanDrvId = rideDirection === 'to' ? driver.vanDriverIdTo : driver.vanDriverIdFrom;
                                 const vanDriverPerson = people.find(p => p.id === vanDrvId);
