@@ -92,7 +92,7 @@ const t = {
   noDrv: { ko: '아직 신청한 운전자가 없습니다.', en: 'No drivers have applied yet.' },
   admDesc1: { ko: '위 목록에서 행사를 선택하시면', en: 'Select an event from the list above' },
   admDesc2: { ko: '배정 화면이 나타납니다.', en: 'to view the assignment screen.' },
-  vanNoDriverTo: { ko: '운전자 배정 (대기석에서 드래그)', en: 'Drag from waitlist (Driver)' },
+  vanNoDriverTo: { ko: '운전자 배정', en: 'Drag from waitlist (Driver)' },
   tab1: { ko: '[ 달력 및 신청 ]', en: '[ Calendar ]' },
   tab2: { ko: '[ 내 정보 설정 ]', en: '[ Profile ]' },
   tab3: { ko: '[ 배정 관리 ]', en: '[ Admin ]' },
