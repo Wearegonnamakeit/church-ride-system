@@ -957,9 +957,9 @@ export default function Home() {
                             <div 
                               className={`drop-zone ${dragOverCarId === 'van_driver_slot' ? 'drop-zone-van-active' : ''} ${selectedRider ? 'highlight-drop-van' : ''}`} 
                               onClick={(e) => { e.stopPropagation(); assignToCar('van_driver_slot'); }}
-                              onDragOver={(e) => { e.preventDefault(); setDragOverCarId('van_driver_slot'); }} 
-                              onDragLeave={() => setDragOverCarId(null)} 
-                              onDrop={(e) => handleDrop(e, 'van_driver_slot')}
+                              onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setDragOverCarId('van_driver_slot'); }} 
+                              onDragLeave={(e) => { e.stopPropagation(); setDragOverCarId(null); }} 
+                              onDrop={(e) => { e.stopPropagation(); handleDrop(e, 'van_driver_slot'); }}
                               style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '6px 12px', border: dragOverCarId === 'van_driver_slot' ? '2px dashed #10b981' : '1px dashed #d4d4d8', borderRadius: '8px', background: dragOverCarId === 'van_driver_slot' ? '#ecfdf5' : '#f8fafc', minHeight: '36px', cursor: 'pointer', marginRight: '10px' }}
                             >
                               <span style={{ fontWeight: '900', color: '#18181b', fontSize: '15px', marginRight: '8px' }}>{lang === 'ko' ? '밴' : 'Church Van'}</span>
@@ -968,7 +968,7 @@ export default function Home() {
                                 const vanDriverPerson = people.find(p => p.id === vanDrvId);
                                 return vanDriverPerson ? (
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#dcfce7', padding: '4px 8px', borderRadius: '6px' }}>
-                                    <span style={{ fontSize: '13px', color: '#166534', fontWeight: 'bold' }}>{lang === 'ko' ? '운전:' : 'Drv:'} {vanDriverPerson.name}</span>
+                                    <span style={{ fontSize: '13px', color: '#166534', fontWeight: 'bold' }}>{vanDriverPerson.name}</span>
                                     <button className="hover-btn" onClick={(e) => removeVanDriver(e, rideDirection)} style={{ border: 'none', background: 'transparent', color: '#166534', fontWeight: 'bold', cursor: 'pointer', padding: 0 }}>X</button>
                                   </div>
                                 ) : (
