@@ -633,7 +633,7 @@ export default function Home() {
         const vanDrvId = rideDirection === 'to' ? driver.vanDriverIdTo : driver.vanDriverIdFrom;
         const vanDrv = people.find(p => p.id === vanDrvId);
         const drvName = vanDrv ? vanDrv.name : (lang === 'ko' ? '미정' : 'TBD');
-        text += `[밴] 운전: ${drvName} (${statusTxt})${timeTxt}\n - ${lang === 'ko' ? '탑승' : 'Riders'}: ${riderTxt}\n\n`;
+        text += `[밴] ${drvName} (${statusTxt})${timeTxt}\n - ${lang === 'ko' ? '탑승' : 'Riders'}: ${riderTxt}\n\n`;
       } else {
         text += `${t.car[lang]} ${driver.name} (${statusTxt})${timeTxt}\n - ${lang === 'ko' ? '탑승' : 'Riders'}: ${riderTxt}\n\n`;
       }
