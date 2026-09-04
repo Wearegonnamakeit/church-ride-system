@@ -10,8 +10,14 @@ interface ChurchEvent {
 
 interface Person {
   id: string; name: string; role: 'driver' | 'rider';
-  carId: string | null; capacity?: number; address?: string; 
-  pickupTime?: string; 
+  carId: string | null;
+  carIdTo: string | null;
+  carIdFrom: string | null;
+  capacity?: number; address?: string; 
+  pickupTimeTo?: string;
+  pickupTime?: string;
+  pickupTimeFrom?: string;
+  isVan?: boolean;
 }
 
 interface UserProfile {
@@ -41,7 +47,7 @@ const t = {
   loc: { ko: '장소:', en: 'Location:' },
   myStat: { ko: '내 배정 상태:', en: 'My Ride Status:' },
   statWait: { ko: '대기 중 (아직 배정되지 않음)', en: 'Waiting (Not assigned yet)' },
-  statSelf: { ko: '본인 차량 운행', en: 'Driving own car' },
+  statSelf: { ko: '자차 운행', en: 'Driving own car' },
   statDone: { ko: '배정 완료', en: 'Assignment Complete' },
   btnApply1: { ko: '원클릭 신청', en: '1-Click Apply' },
   btnCancel: { ko: '취소하기', en: 'Cancel' },
@@ -65,10 +71,13 @@ const t = {
   
   admTitle: { ko: '차량 수동 배정', en: 'Manual Ride Assignment' },
   refresh: { ko: '갱신', en: 'Refresh' },
-  share: { ko: '전체 카톡 공유', en: 'Share All' },
+  share: { ko: '현재 탭 카톡 공유', en: 'Share Current' },
   saving: { ko: '저장중..', en: 'Saving..' },
   saveRes: { ko: '결과 저장', en: 'Save Results' },
   selEvt: { ko: '-- 배정할 행사를 선택하세요 --', en: '-- Select an event to assign --' },
+  
+  dirTo: { ko: '➡️ 가는 편 (교회로)', en: '➡️ To Event' },
+  dirFrom: { ko: '⬅️ 오는 편 (집으로)', en: '⬅️ From Event' },
   
   totRider: { ko: '총 탑승 신청자:', en: 'Total Passengers:' },
   totSeat: { ko: '총 차량 좌석:', en: 'Total Seats:' },
@@ -95,7 +104,7 @@ const t = {
   
   selected: { ko: '(선택됨)', en: '(Selected)' },
   cancelMark: { ko: 'X', en: 'X' },
-
+  
   helpBtn: { ko: '도움말', en: 'Help' },
   manTitle: { ko: '앱 사용 설명서', en: 'How to use this app' },
   man1: { ko: '1. 내 정보 설정 (최초 1회)', en: '1. Profile Setup (Once)' },
@@ -103,15 +112,15 @@ const t = {
   man2: { ko: '2. 1초 자동 신청', en: '2. 1-Click Auto Apply' },
   man2Desc: { ko: '[달력 및 신청] 탭에서 원하는 일정의 [원클릭 신청] 버튼을 누르면 신청서가 자동으로 완성됩니다. 차량의 경우만 한번 더 확인 부탁 드립니다.', en: 'Click [1-Click Apply] on the desired event in the [Calendar] tab to auto-fill the form. Please double-check your ride option.' },
   man3: { ko: '3. 내 배정 상태 확인', en: '3. Check Ride Status' },
-  man3Desc: { ko: '배정이 완료되면, 앱의 배정 관리 화면에 내가 탑승할 차량 이름이 실시간으로 표시됩니다.', en: 'Once assigned, the name of your designated vehicle will be displayed in real-time.' },
+  man3Desc: { ko: '배정이 완료되면, 앱의 달력 화면에 가는 편과 오는 편 차량 이름이 실시간으로 표시됩니다.', en: 'Once assigned, your assigned vehicles for both directions will be displayed in real-time.' },
   man4: { ko: '4. 정기 참석자 신청 및 취소', en: '4. Regular Attendee Apply & Cancel' },
   man4Desc: { ko: '매주 예배에 참석 하는 인원의 경우 목사님께 말씀하셔서 정기 참석자 명단에 들어가면 따로 설문지로 신청하지 않아도 자동으로 참석 처리 됩니다. 못 가는 경우에만 설문지를 통해 취소하시면 됩니다.', en: 'If you attend weekly, ask the Pastor to add you to the regular attendee list. You will be automatically assigned without needing to apply. Only submit a cancellation form when you cannot attend.' },
   man5: { ko: '5. 인원 배정 안내', en: '5. Ride Assignment Notice' },
   man5Desc: { ko: '인원 배정의 경우 목사님 또는 운전자분들이 우선적으로 배정하실 예정입니다.', en: 'The Pastor or drivers will have priority in managing and assigning rides.' },
   man6: { ko: '6. 내비게이션 사용 안내', en: '6. Navigation Guide' },
-  man6Desc: { ko: '배정 완료 후 운전자가 [내비게이션 안내] 버튼을 누르면 구글 지도 앱으로 연결됩니다. 지도 앱이 열리면 최적의 동선에 맞게 탑승자 픽업(경유지) 순서를 직접 재배열해 주시기 바랍니다.', en: 'When a driver clicks the [Navigation] button after assignments, Google Maps will open. Please manually rearrange the stops in the map app for the most efficient route.' },
+  man6Desc: { ko: '배정 완료 후 운전자가 [내비게이션] 버튼을 누르면 구글 지도 앱으로 연결됩니다. 지도 앱이 열리면 최적의 동선에 맞게 픽업 순서를 직접 재배열해 주시기 바랍니다.', en: 'When a driver clicks the [Navigation] button, Google Maps will open. Please manually rearrange the stops in the map app for the most efficient route.' },
   man7: { ko: '7. 신청 마감 시간', en: '7. Application Deadline' },
-  man7Desc: { ko: '원활한 인원 배정 및 업데이트를 위해 일정 2시간 전까지는 모든 신청을 끝내주시길 바랍니다.', en: 'For smooth ride assignments and updates, please complete all applications at least 2 hours before the event.' },
+  man7Desc: { ko: '원활한 인원 배정 및 업데이트를 위해 일정 2시간 전까지는 모든 신청을 끝내주시길 바랍니다.', en: 'For smooth assignments, please complete all applications at least 2 hours before the event.' },
   man8: { ko: '8. 피드백 및 문의', en: '8. Feedback & Contact' },
   man8Desc: { ko: '피드백 및 추가 아이디어는 김동호에게 언제든 연락바랍니다.', en: 'Please feel free to contact Dongho Kim for any feedback or new ideas.' },
   closeBtn: { ko: '닫기', en: 'Close' }
@@ -144,6 +153,7 @@ export default function Home() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [profile, setProfile] = useState<UserProfile>({ name: '', phone: '', rideType: '', capacity: '', address: '' });
   const [isProfileSaved, setIsProfileSaved] = useState(false);
+  const [rideDirection, setRideDirection] = useState<'to' | 'from'>('to');
 
   useEffect(() => {
     const savedProfile = localStorage.getItem('church_ride_profile');
@@ -239,36 +249,28 @@ export default function Home() {
     return url;
   };
 
-  // [기능 추가 2] 중복 신청 확인 로직
   const checkApplicationStatus = (eventName: string, type: 'regular' | 'special') => {
     if (!profile.name) return false;
     let isApplied = false;
-    
     if (type === 'regular' && regularAttendees.length > 0) {
       const isRegular = regularAttendees.some(row => row['이름'] === profile.name);
       if (isRegular) isApplied = true;
     }
-
     const myResponses = rawResponses.filter(row => {
       const rowEvent = row['참석 행사'] || '';
       const nameKey = Object.keys(row).find(key => key.includes('이름')) || '';
       return rowEvent === eventName && row[nameKey] === profile.name;
     });
-
     if (myResponses.length > 0) {
       const latestResponse = myResponses[myResponses.length - 1];
       const attendanceStatus = String(latestResponse['참석 여부 (Attendance or not)'] || latestResponse['참석 여부'] || '');
-      if (attendanceStatus.includes('불참')) {
-        isApplied = false;
-      } else if (attendanceStatus.includes('참석')) {
-        isApplied = true;
-      }
+      if (attendanceStatus.includes('불참')) isApplied = false;
+      else if (attendanceStatus.includes('참석')) isApplied = true;
     }
-    
     return isApplied;
   };
 
-  // [기능 추가 1] 달력 배정 상태창에 운전자 및 픽업 안내 노출 추가
+  // V3.0 달력 배정 상태창 (왕복 분리 표시)
   const getMyRideStatus = (eventName: string) => {
     if (!profile.name) return null;
     const assignmentRow = savedAssignments.find(a => a['행사명'] === eventName);
@@ -277,24 +279,27 @@ export default function Home() {
     try {
       const data = JSON.parse(assignmentRow['데이터']);
       const me = data.find((p: any) => p.name === profile.name);
-      if (!me) return { status: t.statWait[lang], color: '#f59e0b' };
+      if (!me) return { statusTo: t.statWait[lang], colorTo: '#f59e0b', statusFrom: t.statWait[lang], colorFrom: '#f59e0b' };
       
-      if (me.role === 'driver') {
-        const passengers = data.filter((p: any) => p.role === 'rider' && p.carId === me.id);
-        const passengerNames = passengers.map((p: any) => p.name).join(', ') || (lang === 'ko' ? '없음' : 'None');
-        let timeStr = me.pickupTime ? (lang === 'ko' ? ` / 안내: ${me.pickupTime}` : ` / Info: ${me.pickupTime}`) : '';
-        return { status: lang === 'ko' ? `본인 차량 (탑승: ${passengerNames}${timeStr})` : `Self (Riders: ${passengerNames}${timeStr})`, color: '#10b981' };
-      }
-      
-      if (me.carId) {
-        const driver = data.find((p: any) => p.id === me.carId);
-        let timeStr = '';
-        if (driver && driver.pickupTime) {
-          timeStr = lang === 'ko' ? ` (안내: ${driver.pickupTime})` : ` (Info: ${driver.pickupTime})`;
+      const buildStatus = (direction: 'to' | 'from') => {
+        if (me.role === 'driver') return { txt: t.statSelf[lang], col: '#10b981' };
+        const myCarId = direction === 'to' ? me.carIdTo : me.carIdFrom;
+        if (myCarId) {
+          const driver = data.find((p: any) => p.id === myCarId);
+          if (driver) {
+            const timeStr = direction === 'to' ? driver.pickupTimeTo : driver.pickupTimeFrom;
+            const timeTxt = timeStr ? ` (${timeStr})` : '';
+            return { txt: `${driver.name} 탑승${timeTxt}`, col: '#3b82f6' };
+          }
+          return { txt: t.statDone[lang], col: '#3b82f6' };
         }
-        return driver ? { status: lang === 'ko' ? `${driver.name}님 차량 탑승${timeStr}` : `Riding with ${driver.name}${timeStr}`, color: '#3b82f6' } : { status: t.statDone[lang], color: '#3b82f6' };
-      }
-      return { status: t.statWait[lang], color: '#f59e0b' };
+        return { txt: t.statWait[lang], col: '#f59e0b' };
+      };
+
+      return {
+        statusTo: buildStatus('to').txt, colorTo: buildStatus('to').col,
+        statusFrom: buildStatus('from').txt, colorFrom: buildStatus('from').col,
+      };
     } catch (e) { return null; }
   };
 
@@ -311,6 +316,10 @@ export default function Home() {
 
     const attendeeMap = new Map<string, Person>();
 
+    // V3.0 교회 밴 고정 세팅
+    attendeeMap.set('van_1', { id: 'van_1', name: '교회 밴 1호', role: 'driver', capacity: 14, carIdTo: null, carIdFrom: null, address: '', pickupTimeTo: '', pickupTimeFrom: '[일괄 하차] 정해진 장소', carId: null, isVan: true });
+    attendeeMap.set('van_2', { id: 'van_2', name: '교회 밴 2호', role: 'driver', capacity: 14, carIdTo: null, carIdFrom: null, address: '', pickupTimeTo: '', pickupTimeFrom: '[일괄 하차] 정해진 장소', carId: null, isVan: true });
+
     if (isRegular && regularAttendees.length > 0) {
       regularAttendees.forEach((row, idx) => {
         const name = row['이름'];
@@ -323,7 +332,7 @@ export default function Home() {
         let role: 'driver' | 'rider' = rideType.includes('운전') ? 'driver' : 'rider';
         let id = role === 'driver' ? `reg_driver_${idx}` : `reg_rider_${idx}`;
         
-        attendeeMap.set(name, { id, name, role, capacity, carId: role === 'driver' ? id : null, address, pickupTime: '' });
+        attendeeMap.set(name, { id, name, role, capacity, carIdTo: null, carIdFrom: null, address, pickupTimeTo: '', pickupTimeFrom: '', carId: null });
       });
     }
 
@@ -335,12 +344,9 @@ export default function Home() {
         if (!name) return;
 
         const attendanceStatus = String(row['참석 여부 (Attendance or not)'] || row['참석 여부'] || '');
-        const isAbsent = attendanceStatus.includes('불참');
-        const isAttending = attendanceStatus.includes('참석하겠습니다');
-
-        if (isAbsent) {
+        if (attendanceStatus.includes('불참')) {
           attendeeMap.delete(name); 
-        } else if (isAttending) {
+        } else if (attendanceStatus.includes('참석')) {
           const addressKey = Object.keys(row).find(key => key.includes('주소') || key.includes('Address')) || '';
           const address = addressKey ? row[addressKey] : '';
           const rideTypeKey = Object.keys(row).find(key => key.includes('이동 수단') || key.includes('수단') || key.includes('Ride Information')) || '';
@@ -352,22 +358,33 @@ export default function Home() {
           let role: 'driver' | 'rider' = rideType.includes('운전 가능') ? 'driver' : 'rider';
           let id = role === 'driver' ? `form_driver_${idx}` : `form_rider_${idx}`;
           
-          attendeeMap.set(name, { id, name, role, capacity, carId: role === 'driver' ? id : null, address, pickupTime: '' });
+          attendeeMap.set(name, { id, name, role, capacity, carIdTo: null, carIdFrom: null, address, pickupTimeTo: '', pickupTimeFrom: '', carId: null });
         }
       }
     });
 
+    // 구버전 및 신버전 데이터 불러오기 호환성 처리
     const savedRow = savedAssignments.find(r => r['행사명'] === adminSelectedEvent);
     if (savedRow && savedRow['데이터']) {
       try {
         const parsedData = JSON.parse(savedRow['데이터']);
         parsedData.forEach((savedPerson: Person) => {
-          if (attendeeMap.has(savedPerson.name)) {
-            const currentPerson = attendeeMap.get(savedPerson.name)!;
-            if (currentPerson.role === 'driver') {
-              currentPerson.pickupTime = savedPerson.pickupTime || '';
-            } else {
-              currentPerson.carId = savedPerson.carId;
+          if (attendeeMap.has(savedPerson.name) || savedPerson.isVan) {
+            let currentPerson = attendeeMap.get(savedPerson.name);
+            if (!currentPerson && savedPerson.isVan) {
+               attendeeMap.set(savedPerson.id, savedPerson);
+               currentPerson = attendeeMap.get(savedPerson.id);
+            }
+            if (currentPerson) {
+              if (currentPerson.role === 'driver' || currentPerson.isVan) {
+                currentPerson.pickupTimeTo = savedPerson.pickupTimeTo || savedPerson.pickupTime || '';
+                currentPerson.pickupTimeFrom = savedPerson.pickupTimeFrom || savedPerson.pickupTime || '';
+                currentPerson.capacity = savedPerson.capacity !== undefined ? savedPerson.capacity : currentPerson.capacity;
+                if (currentPerson.isVan) currentPerson.name = savedPerson.name; // 밴 이름 변경 유지
+              } else {
+                currentPerson.carIdTo = savedPerson.carIdTo !== undefined ? savedPerson.carIdTo : savedPerson.carId;
+                currentPerson.carIdFrom = savedPerson.carIdFrom !== undefined ? savedPerson.carIdFrom : savedPerson.carId;
+              }
             }
           }
         });
@@ -379,7 +396,7 @@ export default function Home() {
 
   const assignToCar = (carId: string | null) => {
     if (!selectedRider) return;
-    setPeople(prev => prev.map(p => p.id === selectedRider ? { ...p, carId } : p));
+    setPeople(prev => prev.map(p => p.id === selectedRider ? { ...p, [rideDirection === 'to' ? 'carIdTo' : 'carIdFrom']: carId } : p));
     setSelectedRider(null); 
   };
 
@@ -391,10 +408,10 @@ export default function Home() {
 
     if (carId !== null) {
       const driver = people.find(p => p.id === carId);
-      const passengers = people.filter(p => p.carId === carId);
+      const passengers = people.filter(p => p.role === 'rider' && (rideDirection === 'to' ? p.carIdTo === carId : p.carIdFrom === carId));
       if (driver && passengers.length >= (driver.capacity || 0)) { showToast(t.fullCar[lang], 'error'); setSelectedRider(null); return; }
     }
-    setPeople(prev => prev.map(p => p.id === riderId ? { ...p, carId } : p));
+    setPeople(prev => prev.map(p => p.id === riderId ? { ...p, [rideDirection === 'to' ? 'carIdTo' : 'carIdFrom']: carId } : p));
     setSelectedRider(null);
   };
 
@@ -413,30 +430,32 @@ export default function Home() {
 
   const copyToKakao = () => {
     const drivers = people.filter(p => p.role === 'driver');
-    const unassignedRiders = people.filter(p => p.role === 'rider' && !p.carId);
-    let text = lang === 'ko' ? `[${adminSelectedEvent || '차량 배정'} 결과 안내]\n\n` : `[${adminSelectedEvent || 'Ride Assignment'} Results]\n\n`;
+    const unassignedRiders = people.filter(p => p.role === 'rider' && (rideDirection === 'to' ? !p.carIdTo : !p.carIdFrom));
+    let text = lang === 'ko' ? `[${adminSelectedEvent} - ${rideDirection === 'to' ? '가는 편' : '오는 편'}]\n\n` : `[${adminSelectedEvent} - ${rideDirection === 'to' ? 'To Event' : 'From Event'}]\n\n`;
+    
     drivers.forEach(driver => {
-      const passengers = people.filter(p => p.role === 'rider' && p.carId === driver.id);
+      const passengers = people.filter(p => p.role === 'rider' && (rideDirection === 'to' ? p.carIdTo === driver.id : p.carIdFrom === driver.id));
       const isFull = passengers.length >= (driver.capacity || 0);
       const statusTxt = isFull ? t.full[lang] : (lang === 'ko' ? `${driver.capacity! - passengers.length}자리 남음` : `${driver.capacity! - passengers.length} seats left`);
       const riderTxt = passengers.map(p => p.name).join(', ') || (lang === 'ko' ? '빈 차' : 'Empty');
-      const timeTxt = driver.pickupTime ? (lang === 'ko' ? ` [안내: ${driver.pickupTime}]` : ` [Info: ${driver.pickupTime}]`) : '';
+      const timeStr = rideDirection === 'to' ? driver.pickupTimeTo : driver.pickupTimeFrom;
+      const timeTxt = timeStr ? (lang === 'ko' ? ` [안내: ${timeStr}]` : ` [Info: ${timeStr}]`) : '';
       text += `${t.car[lang]} ${driver.name} (${statusTxt})${timeTxt}\n - ${lang === 'ko' ? '탑승' : 'Riders'}: ${riderTxt}\n\n`;
     });
     text += `[${t.waitlist[lang]}]\n - ${unassignedRiders.length > 0 ? unassignedRiders.map(p => p.name).join(', ') : (lang === 'ko' ? '없음' : 'None')}\n`;
     navigator.clipboard.writeText(text).then(() => showToast(t.copyOk[lang], 'success'));
   };
 
-  // [기능 추가 3] 개별 차량 명단 복사 기능
   const copyIndividualCar = (e: React.MouseEvent, driverId: string) => {
     e.stopPropagation();
     const driver = people.find(p => p.id === driverId);
     if (!driver) return;
-    const passengers = people.filter(p => p.role === 'rider' && p.carId === driverId);
+    const passengers = people.filter(p => p.role === 'rider' && (rideDirection === 'to' ? p.carIdTo === driverId : p.carIdFrom === driverId));
     
-    let text = lang === 'ko' ? `[차량] ${driver.name}\n` : `[Car] ${driver.name}\n`;
-    if (driver.pickupTime) {
-      text += lang === 'ko' ? `- 픽업 안내: ${driver.pickupTime}\n` : `- Pickup Info: ${driver.pickupTime}\n`;
+    let text = lang === 'ko' ? `[차량] ${driver.name} (${rideDirection === 'to' ? '가는 편' : '오는 편'})\n` : `[Car] ${driver.name} (${rideDirection === 'to' ? 'To Event' : 'From Event'})\n`;
+    const timeStr = rideDirection === 'to' ? driver.pickupTimeTo : driver.pickupTimeFrom;
+    if (timeStr) {
+      text += lang === 'ko' ? `- 픽업 안내: ${timeStr}\n` : `- Pickup Info: ${timeStr}\n`;
     }
     if (passengers.length > 0) {
       text += lang === 'ko' ? `- 탑승자:\n` : `- Riders:\n`;
@@ -446,25 +465,33 @@ export default function Home() {
     } else {
       text += lang === 'ko' ? `- 탑승자: 배정 인원 없음\n` : `- Riders: Empty\n`;
     }
-    
     navigator.clipboard.writeText(text).then(() => showToast(t.copyOk[lang], 'success'));
   };
 
   const openRouteMap = (driverId: string) => {
     const driver = people.find(p => p.id === driverId);
-    const passengers = people.filter(p => p.role === 'rider' && p.carId === driverId);
+    const passengers = people.filter(p => p.role === 'rider' && (rideDirection === 'to' ? p.carIdTo === driverId : p.carIdFrom === driverId));
     const destination = events.find(e => e.fullName === adminSelectedEvent)?.destination || '';
-    const waypoints = [driver?.address, ...passengers.map(p => p.address), destination].filter(addr => addr && addr.trim() !== '');
+    
+    // 왕복 동선 처리
+    let waypoints = [];
+    if (rideDirection === 'to') {
+      waypoints = [driver?.address, ...passengers.map(p => p.address), destination];
+    } else {
+      waypoints = [destination, ...passengers.map(p => p.address)];
+    }
+    const cleanWaypoints = waypoints.filter(addr => addr && addr.trim() !== '');
 
-    if (waypoints.length < 2) { showToast(t.routeFail[lang], 'error'); return; }
-    window.open(`https://www.google.com/maps/dir/${waypoints.map(addr => encodeURIComponent(addr as string)).join('/')}`, '_blank');
+    if (cleanWaypoints.length < 2) { showToast(t.routeFail[lang], 'error'); return; }
+    window.open(`https://www.google.com/maps/dir/${cleanWaypoints.map(addr => encodeURIComponent(addr as string)).join('/')}`, '_blank');
   };
 
   const year = currentDate.getFullYear(); const month = currentDate.getMonth();
   const blanks = Array.from({ length: new Date(year, month, 1).getDay() }, (_, i) => i);
   const days = Array.from({ length: new Date(year, month + 1, 0).getDate() }, (_, i) => i + 1);
   const selectedEvents = events.filter(e => e.date === selectedDate);
-  const unassignedRiders = people.filter(p => p.role === 'rider' && !p.carId);
+  
+  const unassignedRiders = people.filter(p => p.role === 'rider' && (rideDirection === 'to' ? !p.carIdTo : !p.carIdFrom));
   const drivers = people.filter(p => p.role === 'driver');
   const uniqueEvents = Array.from(new Set(events.map(e => e.fullName)));
   
@@ -593,7 +620,7 @@ export default function Home() {
       {toast && <div className="toast-enter" style={{ position: 'fixed', bottom: '100px', left: '50%', transform: 'translateX(-50%)', background: toast.type === 'error' ? '#ef4444' : toast.type === 'success' ? '#10b981' : '#3f3f46', color: '#fff', padding: '14px 24px', borderRadius: '30px', fontWeight: 'bold', fontSize: '14px', zIndex: 90, boxShadow: '0 8px 20px rgba(0,0,0,0.2)', whiteSpace: 'nowrap' }}>{toast.message}</div>}
 
       <header style={{ background: '#ffffff', padding: '15px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 10, borderBottom: '1px solid #e4e4e7' }}>
-        <h1 style={{ margin: 0, fontSize: '18px', color: '#18181b', fontWeight: '900' }}>Livingstone Lift</h1>
+        <h1 style={{ margin: 0, fontSize: '18px', color: '#18181b', fontWeight: '900' }}>LivingStone Ride</h1>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button onClick={() => setIsHelpOpen(true)} style={{ background: '#f4f4f5', border: '1px solid #e4e4e7', padding: '6px 12px', borderRadius: '16px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', color: '#3f3f46' }}>
             {t.helpBtn[lang]}
@@ -672,9 +699,15 @@ export default function Home() {
                       {event.destination && <div style={{ fontSize: '13px', color: '#71717a', marginBottom: '15px' }}>{t.loc[lang]} <span style={{ fontWeight: 'bold', color: '#3f3f46' }}>{event.destination}</span></div>}
                       
                       {myStatus && (
-                        <div style={{ padding: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 'bold' }}>{t.myStat[lang]}</span>
-                          <span style={{ fontSize: '13px', color: myStatus.color, fontWeight: '900', wordBreak: 'keep-all', lineHeight: '1.4' }}>{myStatus.status}</span>
+                        <div style={{ background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '15px', overflow: 'hidden' }}>
+                          <div style={{ padding: '10px 12px', display: 'flex', gap: '8px', borderBottom: '1px solid #e2e8f0' }}>
+                            <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 'bold', minWidth: '40px' }}>가는 편</span>
+                            <span style={{ fontSize: '13px', color: myStatus.colorTo, fontWeight: '900', wordBreak: 'keep-all', lineHeight: '1.4' }}>{myStatus.statusTo}</span>
+                          </div>
+                          <div style={{ padding: '10px 12px', display: 'flex', gap: '8px' }}>
+                            <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 'bold', minWidth: '40px' }}>오는 편</span>
+                            <span style={{ fontSize: '13px', color: myStatus.colorFrom, fontWeight: '900', wordBreak: 'keep-all', lineHeight: '1.4' }}>{myStatus.statusFrom}</span>
+                          </div>
                         </div>
                       )}
                       
@@ -707,7 +740,7 @@ export default function Home() {
               <select value={profile.rideType} onChange={(e) => setProfile({...profile, rideType: e.target.value})} style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #d4d4d8', fontSize: '16px', background: '#fff' }}>
                 <option value="">{t.optSel[lang]}</option>
                 <option value="라이드 필요 (탑승자, I need ride system)">{t.optRide[lang]}</option>
-                <option value="운전 가능 (다른 사람 탑승 가능, I can give a ride)">{t.optDrive[lang]}</option>
+                <option value="운전 가능 (차량 제공, I can give a ride)">{t.optDrive[lang]}</option>
                 <option value="자차 이동 (라이드 불필요, I don't need a ride)">{t.optSelf[lang]}</option>
               </select>
             </div>
@@ -729,7 +762,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div style={{ marginBottom: '20px' }}>
+            <div style={{ marginBottom: '15px' }}>
               <select value={adminSelectedEvent} onChange={(e) => setAdminSelectedEvent(e.target.value)} style={{ width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid #d4d4d8', fontSize: '16px', background: '#fff', cursor: 'pointer', color: '#18181b', fontWeight: 'bold' }}>
                 <option value="">{t.selEvt[lang]}</option>
                 {uniqueEvents.map(eventName => <option key={eventName} value={eventName}>{eventName}</option>)}
@@ -738,6 +771,16 @@ export default function Home() {
 
             {adminSelectedEvent ? (
               <>
+                {/* 왕복 배정 탭 버튼 */}
+                <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+                  <button onClick={() => setRideDirection('to')} style={{ flex: 1, padding: '12px', borderRadius: '10px', fontWeight: 'bold', fontSize: '14px', border: rideDirection === 'to' ? '2px solid #3b82f6' : '1px solid #e4e4e7', background: rideDirection === 'to' ? '#eff6ff' : '#fff', color: rideDirection === 'to' ? '#1d4ed8' : '#71717a', transition: 'all 0.2s' }}>
+                    {t.dirTo[lang]}
+                  </button>
+                  <button onClick={() => setRideDirection('from')} style={{ flex: 1, padding: '12px', borderRadius: '10px', fontWeight: 'bold', fontSize: '14px', border: rideDirection === 'from' ? '2px solid #ec4899' : '1px solid #e4e4e7', background: rideDirection === 'from' ? '#fdf2f8' : '#fff', color: rideDirection === 'from' ? '#be185d' : '#71717a', transition: 'all 0.2s' }}>
+                    {t.dirFrom[lang]}
+                  </button>
+                </div>
+
                 <div style={{ background: '#fff', padding: '15px', borderRadius: '12px', border: '1px solid #e4e4e7', marginBottom: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px', fontWeight: 'bold' }}>
                     <span style={{ color: '#3f3f46' }}>{t.totRider[lang]} {totalRiders}</span>
@@ -757,11 +800,14 @@ export default function Home() {
                   )}
                 </div>
 
-                <div className={`drop-zone ${dragOverCarId === 'waitlist' ? 'drop-zone-active' : ''} ${selectedRider ? 'highlight-drop' : ''}`} onClick={() => assignToCar(null)} onDragOver={(e) => { e.preventDefault(); setDragOverCarId('waitlist'); }} onDragLeave={() => setDragOverCarId(null)} onDrop={(e) => handleDrop(e, null)} style={{ background: '#ffffff', padding: '20px', borderRadius: '16px', border: dragOverCarId === 'waitlist' ? '2px dashed #3b82f6' : '1px solid #e4e4e7', minHeight: '100px', marginBottom: '25px', cursor: 'pointer' }}>
-                  <h3 style={{ margin: '0 0 15px 0', fontSize: '15px', color: '#18181b', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}>{t.waitlist[lang]} <span style={{ background: '#f4f4f5', padding: '2px 8px', borderRadius: '10px', fontSize: '12px', color: '#71717a' }}>{unassignedRiders.length}</span></h3>
+                <div className={`drop-zone ${dragOverCarId === 'waitlist' ? 'drop-zone-active' : ''} ${selectedRider ? 'highlight-drop' : ''}`} onClick={() => assignToCar(null)} onDragOver={(e) => { e.preventDefault(); setDragOverCarId('waitlist'); }} onDragLeave={() => setDragOverCarId(null)} onDrop={(e) => handleDrop(e, null)} style={{ background: '#ffffff', padding: '20px', borderRadius: '16px', border: dragOverCarId === 'waitlist' ? (rideDirection === 'to' ? '2px dashed #3b82f6' : '2px dashed #ec4899') : '1px solid #e4e4e7', minHeight: '100px', marginBottom: '25px', cursor: 'pointer' }}>
+                  <h3 style={{ margin: '0 0 15px 0', fontSize: '15px', color: '#18181b', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}>
+                    {t.waitlist[lang]} 
+                    <span style={{ background: '#f4f4f5', padding: '2px 8px', borderRadius: '10px', fontSize: '12px', color: '#71717a' }}>{unassignedRiders.length}</span>
+                  </h3>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                     {unassignedRiders.map(rider => (
-                      <button className="hover-btn" key={rider.id} draggable onDragStart={(e) => handleDragStart(e, rider.id)} onDragEnd={() => setSelectedRider(null)} onClick={(e) => { e.stopPropagation(); setSelectedRider(selectedRider === rider.id ? null : rider.id); }} style={{ padding: '8px 14px', borderRadius: '20px', border: 'none', fontWeight: 'bold', cursor: 'pointer', background: selectedRider === rider.id ? '#3b82f6' : '#f4f4f5', color: selectedRider === rider.id ? '#fff' : '#3f3f46', fontSize: '14px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                      <button className="hover-btn" key={rider.id} draggable onDragStart={(e) => handleDragStart(e, rider.id)} onDragEnd={() => setSelectedRider(null)} onClick={(e) => { e.stopPropagation(); setSelectedRider(selectedRider === rider.id ? null : rider.id); }} style={{ padding: '8px 14px', borderRadius: '20px', border: 'none', fontWeight: 'bold', cursor: 'pointer', background: selectedRider === rider.id ? (rideDirection === 'to' ? '#3b82f6' : '#ec4899') : '#f4f4f5', color: selectedRider === rider.id ? '#fff' : '#3f3f46', fontSize: '14px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
                         {rider.name} {selectedRider === rider.id && t.selected[lang]}
                       </button>
                     ))}
@@ -772,7 +818,7 @@ export default function Home() {
                 <h3 style={{ margin: '0 0 15px 0', fontSize: '15px', color: '#18181b', paddingLeft: '5px', fontWeight: 'bold' }}>{t.carList[lang]}</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                   {drivers.map(driver => {
-                    const passengers = people.filter(p => p.role === 'rider' && p.carId === driver.id);
+                    const passengers = people.filter(p => p.role === 'rider' && (rideDirection === 'to' ? p.carIdTo === driver.id : p.carIdFrom === driver.id));
                     const isFull = passengers.length >= (driver.capacity || 0);
 
                     return (
@@ -780,9 +826,26 @@ export default function Home() {
                         {isFull && <div style={{ position: 'absolute', right: '-25px', top: '15px', background: '#ef4444', color: '#fff', fontSize: '11px', fontWeight: 'bold', padding: '4px 30px', transform: 'rotate(45deg)', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t.full[lang]}</div>}
                         
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontWeight: '900', color: '#18181b', fontSize: '16px' }}>{t.car[lang]} {driver.name}</span>
-                            <span style={{ fontSize: '12px', background: isFull ? '#fee2e2' : '#dcfce7', color: isFull ? '#dc2626' : '#166534', padding: '3px 8px', borderRadius: '10px', fontWeight: 'bold' }}>{passengers.length} / {driver.capacity}</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                            {driver.isVan ? (
+                              <input 
+                                type="text" 
+                                value={driver.name} 
+                                onChange={(e) => setPeople(prev => prev.map(p => p.id === driver.id ? { ...p, name: e.target.value } : p))}
+                                onClick={(e) => e.stopPropagation()}
+                                placeholder="운전자 이름 입력"
+                                style={{ fontWeight: '900', color: '#18181b', fontSize: '16px', border: '1px solid #d4d4d8', borderRadius: '6px', padding: '4px 8px', width: '130px', background: '#f4f4f5' }} 
+                              />
+                            ) : (
+                              <span style={{ fontWeight: '900', color: '#18181b', fontSize: '16px' }}>{t.car[lang]} {driver.name}</span>
+                            )}
+                            
+                            {/* 운전자 정원 조절 컨트롤 (V3.0 기능) */}
+                            <div style={{ display: 'flex', alignItems: 'center', background: isFull ? '#fee2e2' : '#dcfce7', borderRadius: '10px', overflow: 'hidden', border: `1px solid ${isFull ? '#fca5a5' : '#86efac'}` }} onClick={(e) => e.stopPropagation()}>
+                              <button onClick={() => setPeople(prev => prev.map(p => p.id === driver.id ? { ...p, capacity: Math.max(0, (p.capacity || 0) - 1) } : p))} style={{ border: 'none', background: 'transparent', padding: '4px 8px', color: isFull ? '#dc2626' : '#166534', fontWeight: 'bold', cursor: 'pointer' }}>-</button>
+                              <span style={{ fontSize: '13px', color: isFull ? '#dc2626' : '#166534', padding: '0 4px', fontWeight: 'bold' }}>{passengers.length} / {driver.capacity}</span>
+                              <button onClick={() => setPeople(prev => prev.map(p => p.id === driver.id ? { ...p, capacity: (p.capacity || 0) + 1 } : p))} style={{ border: 'none', background: 'transparent', padding: '4px 8px', color: isFull ? '#dc2626' : '#166534', fontWeight: 'bold', cursor: 'pointer' }}>+</button>
+                            </div>
                           </div>
                           <div style={{ display: 'flex', gap: '6px' }}>
                             <button className="hover-btn" onClick={(e) => copyIndividualCar(e, driver.id)} style={{ padding: '6px 10px', background: '#fef01b', color: '#3f2020', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>{t.indivCopy[lang]}</button>
@@ -790,18 +853,18 @@ export default function Home() {
                           </div>
                         </div>
 
-                        {/* 자유 텍스트 입력 픽업 안내 */}
+                        {/* 자유 텍스트 입력 픽업/하차 안내 */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px', background: '#f4f4f5', padding: '8px 12px', borderRadius: '8px' }}>
                           <span style={{ fontSize: '13px', color: '#3f3f46', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
-                            {lang === 'ko' ? '픽업 안내:' : 'Pickup Info:'}
+                            {lang === 'ko' ? '안내 메모:' : 'Info Memo:'}
                           </span>
                           <input 
                             type="text" 
                             placeholder={lang === 'ko' ? "예: 10:30 (순차 픽업) / 개별 연락" : "ex: 10:30 AM / Will text you"}
-                            value={driver.pickupTime || ''}
+                            value={rideDirection === 'to' ? (driver.pickupTimeTo || '') : (driver.pickupTimeFrom || '')}
                             onChange={(e) => {
                               const val = e.target.value;
-                              setPeople(prev => prev.map(p => p.id === driver.id ? { ...p, pickupTime: val } : p));
+                              setPeople(prev => prev.map(p => p.id === driver.id ? { ...p, [rideDirection === 'to' ? 'pickupTimeTo' : 'pickupTimeFrom']: val } : p));
                             }}
                             onClick={(e) => e.stopPropagation()} 
                             style={{ flex: 1, padding: '8px', borderRadius: '6px', border: '1px solid #d4d4d8', fontSize: '14px', background: '#fff' }}
@@ -810,7 +873,7 @@ export default function Home() {
 
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', minHeight: '45px', background: '#f8fafc', padding: '12px', borderRadius: '10px', border: '1px inset #f1f5f9' }}>
                           {passengers.map(rider => (
-                            <button className="hover-btn" key={rider.id} draggable onDragStart={(e) => handleDragStart(e, rider.id)} onDragEnd={() => setSelectedRider(null)} onClick={(e) => { e.stopPropagation(); setSelectedRider(selectedRider === rider.id ? null : rider.id); }} style={{ padding: '6px 12px', borderRadius: '20px', border: '1px solid #cbd5e1', background: selectedRider === rider.id ? '#3b82f6' : '#ffffff', color: selectedRider === rider.id ? '#fff' : '#334155', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <button className="hover-btn" key={rider.id} draggable onDragStart={(e) => handleDragStart(e, rider.id)} onDragEnd={() => setSelectedRider(null)} onClick={(e) => { e.stopPropagation(); setSelectedRider(selectedRider === rider.id ? null : rider.id); }} style={{ padding: '6px 12px', borderRadius: '20px', border: '1px solid #cbd5e1', background: selectedRider === rider.id ? (rideDirection === 'to' ? '#3b82f6' : '#ec4899') : '#ffffff', color: selectedRider === rider.id ? '#fff' : '#334155', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                               {rider.name} 
                               {selectedRider === rider.id ? ` ${t.selected[lang]}` : <span style={{ color: '#94a3b8', fontSize: '12px', fontWeight: 'normal', marginLeft: '4px' }}>{t.cancelMark[lang]}</span>}
                             </button>
