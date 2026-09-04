@@ -958,49 +958,52 @@ export default function Home() {
                       <div key={driver.id} className={`drop-zone ${dragOverCarId === driver.id ? 'drop-zone-active' : ''} ${selectedRider && !isFull ? 'highlight-drop' : ''}`} onClick={() => !isFull && assignToCar(driver.id)} onDragOver={(e) => { e.preventDefault(); !isFull && setDragOverCarId(driver.id); }} onDragLeave={() => setDragOverCarId(null)} onDrop={(e) => handleDrop(e, driver.id)} style={{ background: '#ffffff', padding: '20px', borderRadius: '16px', border: isFull ? '2px solid #fecaca' : '1px solid #e4e4e7', position: 'relative', cursor: isFull ? 'not-allowed' : 'pointer', overflow: 'hidden' }}>
                         {isFull && <div style={{ position: 'absolute', right: '-25px', top: '15px', background: '#ef4444', color: '#fff', fontSize: '11px', fontWeight: 'bold', padding: '4px 30px', transform: 'rotate(45deg)', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>{t.full[lang]}</div>}
                         
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                          
-                          {driver.isVan ? (
-                            <div 
-                              className={`drop-zone ${dragOverCarId === 'van_driver_slot' ? 'drop-zone-van-active' : ''} ${selectedRider ? 'highlight-drop-van' : ''}`} 
-                              onClick={(e) => { e.stopPropagation(); assignToCar('van_driver_slot'); }}
-                              onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setDragOverCarId('van_driver_slot'); }} 
-                              onDragLeave={(e) => { e.stopPropagation(); setDragOverCarId(null); }} 
-                              onDrop={(e) => { e.stopPropagation(); handleDrop(e, 'van_driver_slot'); }}
-                              style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '6px 12px', border: dragOverCarId === 'van_driver_slot' ? '2px dashed #10b981' : '1px dashed #d4d4d8', borderRadius: '8px', background: dragOverCarId === 'van_driver_slot' ? '#ecfdf5' : '#f8fafc', minHeight: '36px', cursor: 'pointer', marginRight: '10px' }}
-                            >
-                              <span style={{ fontWeight: '900', color: '#18181b', fontSize: '15px', marginRight: '8px' }}>{lang === 'ko' ? '밴' : 'Church Van'}</span>
-                              {(() => {
-                                const vanDrvId = rideDirection === 'to' ? driver.vanDriverIdTo : driver.vanDriverIdFrom;
-                                const vanDriverPerson = people.find(p => p.id === vanDrvId);
-                                return vanDriverPerson ? (
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#dcfce7', padding: '4px 8px', borderRadius: '6px' }}>
-                                    <span style={{ fontSize: '13px', color: '#166534', fontWeight: 'bold' }}>{vanDriverPerson.name}</span>
-                                    <button className="hover-btn" onClick={(e) => removeVanDriver(e, rideDirection)} style={{ border: 'none', background: 'transparent', color: '#166534', fontWeight: 'bold', cursor: 'pointer', padding: 0 }}>X</button>
-                                  </div>
-                                ) : (
-                                  <span style={{ fontSize: '13px', color: '#a1a1aa' }}>{t.vanNoDriverTo[lang]}</span>
-                                );
-                              })()}
+                        {/* --- 1층과 2층으로 나뉜 UI --- */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '15px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                            {driver.isVan ? (
+                              <div 
+                                className={`drop-zone ${dragOverCarId === 'van_driver_slot' ? 'drop-zone-van-active' : ''} ${selectedRider ? 'highlight-drop-van' : ''}`} 
+                                onClick={(e) => { e.stopPropagation(); assignToCar('van_driver_slot'); }}
+                                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setDragOverCarId('van_driver_slot'); }} 
+                                onDragLeave={(e) => { e.stopPropagation(); setDragOverCarId(null); }} 
+                                onDrop={(e) => { e.stopPropagation(); handleDrop(e, 'van_driver_slot'); }}
+                                style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '6px 12px', border: dragOverCarId === 'van_driver_slot' ? '2px dashed #10b981' : '1px dashed #d4d4d8', borderRadius: '8px', background: dragOverCarId === 'van_driver_slot' ? '#ecfdf5' : '#f8fafc', minHeight: '36px', cursor: 'pointer', overflow: 'hidden' }}
+                              >
+                                <span style={{ fontWeight: '900', color: '#18181b', fontSize: '15px', marginRight: '8px', whiteSpace: 'nowrap' }}>🚐 {lang === 'ko' ? '교회 밴' : 'Church Van'}</span>
+                                {(() => {
+                                  const vanDrvId = rideDirection === 'to' ? driver.vanDriverIdTo : driver.vanDriverIdFrom;
+                                  const vanDriverPerson = people.find(p => p.id === vanDrvId);
+                                  return vanDriverPerson ? (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#dcfce7', padding: '4px 8px', borderRadius: '6px', whiteSpace: 'nowrap' }}>
+                                      <span style={{ fontSize: '13px', color: '#166534', fontWeight: 'bold' }}>{vanDriverPerson.name}</span>
+                                      <button className="hover-btn" onClick={(e) => removeVanDriver(e, rideDirection)} style={{ border: 'none', background: 'transparent', color: '#166534', fontWeight: 'bold', cursor: 'pointer', padding: 0 }}>X</button>
+                                    </div>
+                                  ) : (
+                                    <span style={{ fontSize: '13px', color: '#a1a1aa', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{t.vanNoDriverTo[lang]}</span>
+                                  );
+                                })()}
+                              </div>
+                            ) : (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, padding: '4px', overflow: 'hidden' }}>
+                                <span style={{ fontWeight: '900', color: '#18181b', fontSize: '16px', whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{t.car[lang]} {driver.name}</span>
+                              </div>
+                            )}
+                            
+                            <div style={{ display: 'flex', alignItems: 'center', background: isFull ? '#fee2e2' : '#dcfce7', borderRadius: '10px', border: `1px solid ${isFull ? '#fca5a5' : '#86efac'}`, whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
+                              <button onClick={() => setPeople(prev => prev.map(p => p.id === driver.id ? { ...p, [rideDirection === 'to' ? 'capacityTo' : 'capacityFrom']: Math.max(0, currentCapacity - 1) } : p))} style={{ border: 'none', background: 'transparent', padding: '4px 8px', color: isFull ? '#dc2626' : '#166534', fontWeight: 'bold', cursor: 'pointer' }}>-</button>
+                              <span style={{ fontSize: '13px', color: isFull ? '#dc2626' : '#166534', padding: '0 4px', fontWeight: 'bold' }}>{passengers.length} / {currentCapacity}</span>
+                              <button onClick={() => setPeople(prev => prev.map(p => p.id === driver.id ? { ...p, [rideDirection === 'to' ? 'capacityTo' : 'capacityFrom']: currentCapacity + 1 } : p))} style={{ border: 'none', background: 'transparent', padding: '4px 8px', color: isFull ? '#dc2626' : '#166534', fontWeight: 'bold', cursor: 'pointer' }}>+</button>
                             </div>
-                          ) : (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, padding: '4px' }}>
-                              <span style={{ fontWeight: '900', color: '#18181b', fontSize: '16px' }}>{t.car[lang]} {driver.name}</span>
-                            </div>
-                          )}
-                          
-                          <div style={{ display: 'flex', alignItems: 'center', background: isFull ? '#fee2e2' : '#dcfce7', borderRadius: '10px', overflow: 'hidden', border: `1px solid ${isFull ? '#fca5a5' : '#86efac'}` }} onClick={(e) => e.stopPropagation()}>
-                            <button onClick={() => setPeople(prev => prev.map(p => p.id === driver.id ? { ...p, [rideDirection === 'to' ? 'capacityTo' : 'capacityFrom']: Math.max(0, currentCapacity - 1) } : p))} style={{ border: 'none', background: 'transparent', padding: '4px 8px', color: isFull ? '#dc2626' : '#166534', fontWeight: 'bold', cursor: 'pointer' }}>-</button>
-                            <span style={{ fontSize: '13px', color: isFull ? '#dc2626' : '#166534', padding: '0 4px', fontWeight: 'bold' }}>{passengers.length} / {currentCapacity}</span>
-                            <button onClick={() => setPeople(prev => prev.map(p => p.id === driver.id ? { ...p, [rideDirection === 'to' ? 'capacityTo' : 'capacityFrom']: currentCapacity + 1 } : p))} style={{ border: 'none', background: 'transparent', padding: '4px 8px', color: isFull ? '#dc2626' : '#166534', fontWeight: 'bold', cursor: 'pointer' }}>+</button>
                           </div>
-                          
-                          <div style={{ display: 'flex', gap: '6px', marginLeft: '10px' }}>
-                            <button className="hover-btn" onClick={(e) => copyIndividualCar(e, driver.id)} style={{ padding: '6px 10px', background: '#fef01b', color: '#3f2020', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>{t.indivCopy[lang]}</button>
-                            <button className="hover-btn" onClick={(e) => { e.stopPropagation(); openRouteMap(driver.id); }} style={{ padding: '6px 10px', background: '#18181b', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>{t.navi[lang]}</button>
+
+                          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                            <button className="hover-btn" onClick={(e) => copyIndividualCar(e, driver.id)} style={{ padding: '8px 14px', background: '#fef01b', color: '#3f2020', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap' }}>{t.indivCopy[lang]}</button>
+                            <button className="hover-btn" onClick={(e) => { e.stopPropagation(); openRouteMap(driver.id); }} style={{ padding: '8px 14px', background: '#18181b', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', whiteSpace: 'nowrap' }}>{t.navi[lang]}</button>
                           </div>
                         </div>
 
+                        {/* 자유 텍스트 입력 픽업/하차 안내 */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px', background: '#f4f4f5', padding: '8px 12px', borderRadius: '8px' }}>
                           <span style={{ fontSize: '13px', color: '#3f3f46', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
                             {lang === 'ko' ? '안내 메모:' : 'Info Memo:'}
