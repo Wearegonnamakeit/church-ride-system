@@ -316,9 +316,7 @@ export default function Home() {
 
     const attendeeMap = new Map<string, Person>();
 
-    // V3.0 교회 밴 고정 세팅
-    attendeeMap.set('van_1', { id: 'van_1', name: '교회 밴 1호', role: 'driver', capacity: 14, carIdTo: null, carIdFrom: null, address: '', pickupTimeTo: '', pickupTimeFrom: '[일괄 하차] 정해진 장소', carId: null, isVan: true });
-    attendeeMap.set('van_2', { id: 'van_2', name: '교회 밴 2호', role: 'driver', capacity: 14, carIdTo: null, carIdFrom: null, address: '', pickupTimeTo: '', pickupTimeFrom: '[일괄 하차] 정해진 장소', carId: null, isVan: true });
+    attendeeMap.set('van_1', { id: 'van_1', name: '', role: 'driver', capacity: 14, carIdTo: null, carIdFrom: null, address: '', pickupTimeTo: '', pickupTimeFrom: '[일괄 하차] 정해진 장소', carId: null, isVan: true });
 
     if (isRegular && regularAttendees.length > 0) {
       regularAttendees.forEach((row, idx) => {
